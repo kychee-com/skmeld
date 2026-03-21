@@ -1,0 +1,38 @@
+apiVersion: run402.com/v1alpha1
+kind: App
+
+publish:
+  visibility: public
+  fork:
+    allowed: true
+    minTier: hobby
+
+  publisherRewards:
+    enabled: true
+    preset: standard-v1
+
+bootstrap:
+  variables:
+    - name: admin_email
+      type: string
+      required: true
+      description: "Email address for the first admin user"
+    - name: admin_password
+      type: string
+      required: false
+      description: "Password for the admin account (auto-generated if omitted)"
+    - name: admin_name
+      type: string
+      required: false
+      default: "Admin"
+      description: "Display name for the admin user"
+    - name: app_name
+      type: string
+      required: false
+      default: "SkMeld"
+      description: "Business or organization name shown in the app"
+    - name: seed_demo_data
+      type: boolean
+      required: false
+      default: false
+      description: "Populate with sample properties, requests, and vendors for a quick tour"
