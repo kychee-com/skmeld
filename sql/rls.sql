@@ -1,11 +1,11 @@
 -- SkMeld RLS policies
 -- Roles: owner_admin (full), staff (operational), resident (scoped to own data)
--- auth.uid() returns the authenticated user's id from JWT sub claim
+-- auth.uid() returns UUID; profile user_id columns are TEXT, so cast with ::text
 -- auth.role() returns 'authenticated' for logged-in users
 
 -- Helper: get the user's app-level role from profiles
 CREATE OR REPLACE FUNCTION get_user_role() RETURNS TEXT AS $$
-  SELECT role_key FROM profiles WHERE user_id = auth.uid()
+  SELECT role_key FROM profiles WHERE user_id = auth.uid()::text
 $$ LANGUAGE sql STABLE SECURITY DEFINER;
 
 -- ============================================================
@@ -29,20 +29,20 @@ CREATE POLICY role_definitions_read ON role_definitions FOR SELECT TO anon, auth
 ALTER TABLE profiles ENABLE ROW LEVEL SECURITY;
 CREATE POLICY profiles_select ON profiles FOR SELECT TO authenticated
   USING (
-    user_id = auth.uid()
+    user_id = auth.uid()::text
     OR get_user_role() IN ('owner_admin', 'staff')
   );
 CREATE POLICY profiles_update ON profiles FOR UPDATE TO authenticated
   USING (
-    user_id = auth.uid()
+    user_id = auth.uid()::text
     OR get_user_role() = 'owner_admin'
   )
   WITH CHECK (
-    user_id = auth.uid()
+    user_id = auth.uid()::text
     OR get_user_role() = 'owner_admin'
   );
 CREATE POLICY profiles_insert ON profiles FOR INSERT TO authenticated
-  WITH CHECK (get_user_role() = 'owner_admin' OR user_id = auth.uid());
+  WITH CHECK (get_user_role() = 'owner_admin' OR user_id = auth.uid()::text);
 
 -- ============================================================
 -- Invites — owner_admin only
@@ -86,7 +86,7 @@ CREATE POLICY spaces_write ON spaces FOR ALL TO authenticated
 ALTER TABLE space_occupancies ENABLE ROW LEVEL SECURITY;
 CREATE POLICY occupancies_read ON space_occupancies FOR SELECT TO authenticated
   USING (
-    profile_user_id = auth.uid()
+    profile_user_id = auth.uid()::text
     OR get_user_role() IN ('owner_admin', 'staff')
   );
 CREATE POLICY occupancies_write ON space_occupancies FOR ALL TO authenticated
@@ -131,7 +131,7 @@ ALTER TABLE maintenance_requests ENABLE ROW LEVEL SECURITY;
 CREATE POLICY requests_select ON maintenance_requests FOR SELECT TO authenticated
   USING (
     get_user_role() IN ('owner_admin', 'staff')
-    OR requester_profile_user_id = auth.uid()
+    OR requester_profile_user_id = auth.uid()::text
   );
 -- Writes go through functions (service_role), not direct PostgREST
 
@@ -145,7 +145,7 @@ CREATE POLICY comments_select ON request_comments FOR SELECT TO authenticated
     OR (
       visibility = 'public'
       AND request_id IN (
-        SELECT id FROM maintenance_requests WHERE requester_profile_user_id = auth.uid()
+        SELECT id FROM maintenance_requests WHERE requester_profile_user_id = auth.uid()::text
       )
     )
   );
@@ -160,7 +160,7 @@ CREATE POLICY attachments_select ON attachments FOR SELECT TO authenticated
     OR (
       visibility = 'public'
       AND request_id IN (
-        SELECT id FROM maintenance_requests WHERE requester_profile_user_id = auth.uid()
+        SELECT id FROM maintenance_requests WHERE requester_profile_user_id = auth.uid()::text
       )
     )
   );
@@ -175,7 +175,7 @@ CREATE POLICY events_select ON request_events FOR SELECT TO authenticated
     OR (
       visibility = 'public'
       AND request_id IN (
-        SELECT id FROM maintenance_requests WHERE requester_profile_user_id = auth.uid()
+        SELECT id FROM maintenance_requests WHERE requester_profile_user_id = auth.uid()::text
       )
     )
   );
