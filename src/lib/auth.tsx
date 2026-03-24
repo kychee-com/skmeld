@@ -1,5 +1,5 @@
-import { createContext, useContext, useState, useEffect, useCallback, type ReactNode } from "react";
-import { API_BASE, ANON_KEY, apiGet } from "../api/client";
+import { createContext, useContext, useState, useEffect, useCallback, useRef, type ReactNode } from "react";
+import { API_BASE, ANON_KEY, apiGet, registerSessionExpiredCallback } from "../api/client";
 
 interface User {
   id: string;
@@ -18,6 +18,7 @@ interface Profile {
 interface Session {
   access_token: string;
   refresh_token: string;
+  expires_in: number;
   user: User;
 }
 
@@ -32,6 +33,9 @@ interface AuthContextValue {
 }
 
 const AuthContext = createContext<AuthContextValue | null>(null);
+const SESSION_KEY = "skmeld_session";
+const SESSION_TS_KEY = "skmeld_session_ts"; // epoch ms when session was stored
+const REFRESH_BUFFER_S = 300; // refresh 5 minutes before expiry
 
 export function useAuth() {
   const ctx = useContext(AuthContext);
@@ -43,6 +47,84 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const [user, setUser] = useState<User | null>(null);
   const [profile, setProfile] = useState<Profile | null>(null);
   const [loading, setLoading] = useState(true);
+  const refreshTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  // --- Helpers ---
+
+  const clearRefreshTimer = useCallback(() => {
+    if (refreshTimerRef.current) {
+      clearTimeout(refreshTimerRef.current);
+      refreshTimerRef.current = null;
+    }
+  }, []);
+
+  const forceLogout = useCallback(() => {
+    clearRefreshTimer();
+    localStorage.removeItem(SESSION_KEY);
+    localStorage.removeItem(SESSION_TS_KEY);
+    setUser(null);
+    setProfile(null);
+    window.location.href = "/login?expired=true";
+  }, [clearRefreshTimer]);
+
+  const storeSession = useCallback((session: Session) => {
+    localStorage.setItem(SESSION_KEY, JSON.stringify(session));
+    localStorage.setItem(SESSION_TS_KEY, String(Date.now()));
+  }, []);
+
+  // --- Token refresh ---
+
+  const refreshSession = useCallback(async (): Promise<boolean> => {
+    try {
+      const raw = localStorage.getItem(SESSION_KEY);
+      if (!raw) return false;
+      const session: Session = JSON.parse(raw);
+      if (!session.refresh_token) return false;
+
+      const res = await fetch(`${API_BASE}/auth/v1/token?grant_type=refresh_token`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json", apikey: ANON_KEY },
+        body: JSON.stringify({ refresh_token: session.refresh_token }),
+      });
+
+      if (!res.ok) return false;
+
+      const newSession: Session = await res.json();
+      storeSession(newSession);
+      setUser(newSession.user);
+      return true;
+    } catch {
+      return false;
+    }
+  }, [storeSession]);
+
+  const scheduleRefresh = useCallback((expiresInS: number) => {
+    clearRefreshTimer();
+    const delayMs = Math.max((expiresInS - REFRESH_BUFFER_S) * 1000, 10_000); // at least 10s
+    refreshTimerRef.current = setTimeout(async () => {
+      const ok = await refreshSession();
+      if (ok) {
+        // Re-read the new expires_in from the stored session
+        try {
+          const raw = localStorage.getItem(SESSION_KEY);
+          if (raw) {
+            const s: Session = JSON.parse(raw);
+            scheduleRefresh(s.expires_in);
+          }
+        } catch { /* ignore */ }
+      } else {
+        forceLogout();
+      }
+    }, delayMs);
+  }, [clearRefreshTimer, refreshSession, forceLogout]);
+
+  // --- Register callback for client.ts 401 handling ---
+
+  useEffect(() => {
+    registerSessionExpiredCallback(forceLogout);
+  }, [forceLogout]);
+
+  // --- Load profile ---
 
   const loadProfile = useCallback(async () => {
     try {
@@ -55,24 +137,63 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     }
   }, [user?.id]);
 
+  // --- Initialize from localStorage ---
+
   useEffect(() => {
-    const stored = localStorage.getItem("skmeld_session");
+    const stored = localStorage.getItem(SESSION_KEY);
     if (stored) {
       try {
         const session: Session = JSON.parse(stored);
         setUser(session.user);
+
+        // Calculate remaining TTL
+        const storedAt = Number(localStorage.getItem(SESSION_TS_KEY) || "0");
+        const elapsedS = storedAt ? (Date.now() - storedAt) / 1000 : session.expires_in;
+        const remainingS = session.expires_in - elapsedS;
+
+        if (remainingS > REFRESH_BUFFER_S) {
+          // Token still valid — schedule proactive refresh
+          scheduleRefresh(remainingS);
+        } else {
+          // Token expired or about to expire — refresh immediately
+          refreshSession().then((ok) => {
+            if (ok) {
+              try {
+                const raw = localStorage.getItem(SESSION_KEY);
+                if (raw) {
+                  const s: Session = JSON.parse(raw);
+                  setUser(s.user);
+                  scheduleRefresh(s.expires_in);
+                }
+              } catch { /* ignore */ }
+            } else {
+              // Can't refresh — clear session, redirect to login
+              localStorage.removeItem(SESSION_KEY);
+              localStorage.removeItem(SESSION_TS_KEY);
+              setUser(null);
+              // Don't force redirect here — let ProtectedRoute handle it
+              // But set a flag so login shows expired message
+              if (window.location.pathname !== "/login") {
+                window.location.href = "/login?expired=true";
+              }
+            }
+          });
+        }
       } catch {
-        localStorage.removeItem("skmeld_session");
+        localStorage.removeItem(SESSION_KEY);
+        localStorage.removeItem(SESSION_TS_KEY);
       }
     }
     setLoading(false);
-  }, []);
+  }, []); // eslint-disable-line react-hooks/exhaustive-deps
 
   useEffect(() => {
     if (user) {
       loadProfile();
     }
   }, [user, loadProfile]);
+
+  // --- Actions ---
 
   const login = async (email: string, password: string) => {
     const res = await fetch(`${API_BASE}/auth/v1/token`, {
@@ -84,9 +205,10 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       const body = await res.json().catch(() => ({}));
       throw new Error(body.error || "Login failed");
     }
-    const session = await res.json();
-    localStorage.setItem("skmeld_session", JSON.stringify(session));
+    const session: Session = await res.json();
+    storeSession(session);
     setUser(session.user);
+    scheduleRefresh(session.expires_in);
   };
 
   const signup = async (email: string, password: string) => {
@@ -103,7 +225,9 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   };
 
   const logout = () => {
-    localStorage.removeItem("skmeld_session");
+    clearRefreshTimer();
+    localStorage.removeItem(SESSION_KEY);
+    localStorage.removeItem(SESSION_TS_KEY);
     setUser(null);
     setProfile(null);
   };

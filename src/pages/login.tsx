@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useNavigate, useSearchParams } from "react-router-dom";
 import { useAuth } from "../lib/auth";
 
@@ -9,13 +9,23 @@ export function LoginPage() {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [error, setError] = useState("");
+  const [expiredNotice, setExpiredNotice] = useState(false);
   const [loading, setLoading] = useState(false);
 
   const redirect = searchParams.get("redirect") || "/app";
 
+  // Show expired notice and clean URL param
+  useEffect(() => {
+    if (searchParams.get("expired") === "true") {
+      setExpiredNotice(true);
+      window.history.replaceState({}, "", "/login" + (redirect !== "/app" ? `?redirect=${redirect}` : ""));
+    }
+  }, []); // eslint-disable-line react-hooks/exhaustive-deps
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setError("");
+    setExpiredNotice(false);
     setLoading(true);
     try {
       await login(email, password);
@@ -36,6 +46,12 @@ export function LoginPage() {
         </div>
 
         <form onSubmit={handleSubmit} className="space-y-4">
+          {expiredNotice && !error && (
+            <div className="bg-amber-50 border border-amber-200 text-amber-800 text-sm p-3 rounded-md">
+              Your session expired. Please sign in again.
+            </div>
+          )}
+
           {error && (
             <div className="bg-destructive/10 text-destructive text-sm p-3 rounded-md">{error}</div>
           )}
