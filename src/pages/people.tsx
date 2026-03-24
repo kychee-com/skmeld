@@ -11,6 +11,9 @@ import {
   Shield,
   Wrench,
   Home,
+  Check,
+  AlertCircle,
+  Copy,
 } from "lucide-react";
 
 interface Profile {
@@ -60,6 +63,7 @@ export function PeoplePage() {
     space_ids: "",
   });
   const [inviteError, setInviteError] = useState<string | null>(null);
+  const [inviteResult, setInviteResult] = useState<{ email_sent: boolean; email_error?: string; claim_url?: string } | null>(null);
 
   const { data: profiles, isLoading: profilesLoading } = useQuery({
     queryKey: ["profiles-active"],
@@ -73,12 +77,15 @@ export function PeoplePage() {
 
   const sendInvite = useMutation({
     mutationFn: (data: { email: string; full_name: string; role_key: string; space_ids?: string[] }) =>
-      invokeFunction("create-invites", {
+      invokeFunction<{ invites: Array<{ email_sent: boolean; email_error?: string; claim_url?: string }> }>("create-invites", {
         invites: [data],
       }),
-    onSuccess: () => {
+    onSuccess: (data) => {
       queryClient.invalidateQueries({ queryKey: ["invites-pending"] });
-      setShowInviteForm(false);
+      const result = data.invites?.[0];
+      if (result) {
+        setInviteResult(result);
+      }
       setInviteForm({ email: "", full_name: "", role_key: "staff", space_ids: "" });
       setInviteError(null);
     },
@@ -141,6 +148,47 @@ export function PeoplePage() {
         ))}
       </div>
 
+      {/* Invite result */}
+      {inviteResult && (
+        <div className={cn(
+          "border rounded-lg p-4 flex items-start gap-3",
+          inviteResult.email_sent
+            ? "bg-green-50 border-green-200 dark:bg-green-900/10 dark:border-green-800"
+            : "bg-amber-50 border-amber-200 dark:bg-amber-900/10 dark:border-amber-800"
+        )}>
+          {inviteResult.email_sent ? (
+            <Check className="h-5 w-5 text-green-600 flex-shrink-0 mt-0.5" />
+          ) : (
+            <AlertCircle className="h-5 w-5 text-amber-600 flex-shrink-0 mt-0.5" />
+          )}
+          <div className="flex-1 min-w-0">
+            <p className="text-sm font-medium">
+              {inviteResult.email_sent
+                ? "Invite email sent!"
+                : "Invite created — email could not be sent"}
+            </p>
+            {inviteResult.email_error && (
+              <p className="text-xs text-muted-foreground mt-0.5">{inviteResult.email_error}</p>
+            )}
+            {!inviteResult.email_sent && inviteResult.claim_url && (
+              <div className="mt-2 flex items-center gap-2">
+                <code className="text-xs bg-background border rounded px-2 py-1 truncate block">{inviteResult.claim_url}</code>
+                <button
+                  onClick={() => { navigator.clipboard.writeText(inviteResult.claim_url!); }}
+                  className="flex-shrink-0 p-1 rounded hover:bg-background"
+                  title="Copy link"
+                >
+                  <Copy className="h-3.5 w-3.5" />
+                </button>
+              </div>
+            )}
+          </div>
+          <button onClick={() => setInviteResult(null)} className="text-muted-foreground hover:text-foreground flex-shrink-0">
+            <X className="h-4 w-4" />
+          </button>
+        </div>
+      )}
+
       {/* Invite form */}
       {showInviteForm && (
         <div className="bg-card border rounded-lg p-5">
@@ -150,6 +198,7 @@ export function PeoplePage() {
               <X className="h-4 w-4" />
             </button>
           </div>
+          <p className="text-xs text-muted-foreground mb-3">An invite email will be sent to the address below.</p>
           <form onSubmit={handleInviteSubmit} className="space-y-3">
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
               <div>

@@ -4,7 +4,7 @@ export default async (req: Request) => {
   const user = getUser(req);
   if (!user) return new Response(JSON.stringify({ error: "Unauthorized" }), { status: 401, headers: { "Content-Type": "application/json" } });
 
-  const [profile] = await db.from("profiles").select("role_key").eq("user_id", user.id);
+  const [profile] = await db.from("profiles").select("role_key, full_name").eq("user_id", user.id);
   if (!profile || profile.role_key !== "owner_admin") {
     return new Response(JSON.stringify({ error: "Only owner/admin can create invites" }), { status: 403, headers: { "Content-Type": "application/json" } });
   }
@@ -15,6 +15,14 @@ export default async (req: Request) => {
   if (!Array.isArray(invites) || invites.length === 0) {
     return new Response(JSON.stringify({ error: "invites array is required" }), { status: 400, headers: { "Content-Type": "application/json" } });
   }
+
+  // Read app name for email template
+  const [settings] = await db.from("app_settings").select("app_name").eq("id", 1);
+  const appName = settings?.app_name || "SkMeld";
+
+  const MAILBOX_ID = "mbx_1774371928529_5wb607";
+  const API_BASE = process.env.RUN402_API_BASE || "https://api.run402.com";
+  const SERVICE_KEY = process.env.RUN402_SERVICE_KEY || "";
 
   const results = [];
   const baseUrl = req.headers.get("origin") || req.headers.get("referer")?.replace(/\/[^/]*$/, "") || "";
@@ -35,6 +43,43 @@ export default async (req: Request) => {
 
     const claimUrl = `${baseUrl}/claim?token=${invite.token}`;
 
+    // Send invite email
+    let email_sent = false;
+    let email_error: string | undefined;
+
+    if (!inv.email) {
+      email_error = "No email address provided";
+    } else if (!MAILBOX_ID) {
+      email_error = "Email not configured";
+    } else {
+      try {
+        const emailRes = await fetch(`${API_BASE}/mailboxes/v1/${MAILBOX_ID}/messages`, {
+          method: "POST",
+          headers: {
+            "Authorization": `Bearer ${SERVICE_KEY}`,
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({
+            template: "project_invite",
+            to: inv.email,
+            variables: {
+              project_name: appName,
+              invite_url: claimUrl,
+            },
+          }),
+        });
+
+        if (emailRes.ok) {
+          email_sent = true;
+        } else {
+          const errBody = await emailRes.json().catch(() => ({}));
+          email_error = errBody.message || errBody.error || `Email API error ${emailRes.status}`;
+        }
+      } catch (err) {
+        email_error = `Email delivery failed: ${err instanceof Error ? err.message : String(err)}`;
+      }
+    }
+
     results.push({
       id: invite.id,
       email: inv.email,
@@ -43,6 +88,8 @@ export default async (req: Request) => {
       token: invite.token,
       claim_url: claimUrl,
       expires_at: invite.expires_at,
+      email_sent,
+      ...(email_error ? { email_error } : {}),
     });
   }
 
