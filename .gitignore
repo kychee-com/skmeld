@@ -3,3 +3,7 @@ site/
 tsconfig.tsbuildinfo
 app.json
 deploy-migrations.sql
+deploy-migrations-safe.sql
+site-manifest.json
+allowance.json
+projects.json
