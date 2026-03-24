@@ -63,6 +63,7 @@ export default async (req: Request) => {
             template: "project_invite",
             to: inv.email,
             variables: {
+              inviter_name: profile.full_name || "Admin",
               project_name: appName,
               invite_url: claimUrl,
             },
