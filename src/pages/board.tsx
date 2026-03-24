@@ -1,6 +1,6 @@
 import { useState, useMemo } from "react";
 import { useNavigate } from "react-router-dom";
-import { DndContext, DragEndEvent, DragOverlay, DragStartEvent, closestCenter } from "@dnd-kit/core";
+import { DndContext, DragEndEvent, DragOverlay, DragStartEvent, closestCenter, PointerSensor, useSensor, useSensors } from "@dnd-kit/core";
 import { useBoardCards, useBoardStatuses, type BoardCard } from "../hooks/use-board";
 import { BoardColumn } from "../components/board-column";
 import { BoardCardComponent } from "../components/board-card";
@@ -15,6 +15,9 @@ export function BoardPage() {
   const queryClient = useQueryClient();
   const navigate = useNavigate();
   const [activeCard, setActiveCard] = useState<BoardCard | null>(null);
+  const sensors = useSensors(
+    useSensor(PointerSensor, { activationConstraint: { distance: 8 } }),
+  );
 
   const columnCards = useMemo(() => {
     const map: Record<string, BoardCard[]> = {};
@@ -97,6 +100,7 @@ export function BoardPage() {
 
       <div className="flex-1 overflow-x-auto px-4 pb-4">
         <DndContext
+          sensors={sensors}
           collisionDetection={closestCenter}
           onDragStart={handleDragStart}
           onDragEnd={handleDragEnd}

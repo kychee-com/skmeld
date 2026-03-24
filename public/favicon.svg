@@ -1,0 +1,9 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32" fill="none">
+  <!-- House -->
+  <path d="M16 3L3 14h4v13h7v-8h4v8h7V14h4L16 3z" fill="#10b981"/>
+  <!-- Wrench -->
+  <g transform="translate(17,8) rotate(45)">
+    <rect x="-1.5" y="0" width="3" height="11" rx="1" fill="white"/>
+    <path d="M-3 -1a3.5 3.5 0 0 1 6 0v2h-6z" fill="white"/>
+  </g>
+</svg>

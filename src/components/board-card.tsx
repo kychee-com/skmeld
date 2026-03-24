@@ -42,8 +42,8 @@ export function BoardCardComponent({ card, isDragging, onClick }: BoardCardProps
       {...attributes}
       onClick={onClick}
       className={cn(
-        "bg-card border rounded-lg p-3 cursor-grab active:cursor-grabbing transition-shadow hover:shadow-md",
-        isDragging && "opacity-70 shadow-lg rotate-2",
+        "bg-card border rounded-lg p-3 cursor-pointer transition-shadow hover:shadow-md",
+        isDragging && "opacity-70 shadow-lg rotate-2 cursor-grabbing",
         isOverdue && "border-destructive/50",
       )}
     >
