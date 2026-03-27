@@ -1,0 +1,15 @@
+{
+  "name": "SkMeld",
+  "tagline": "Property maintenance tracking for landlords, HOAs, and office managers.",
+  "logo": "custom/logo.svg",
+  "favicon": "favicon.svg",
+  "fonts": {
+    "display": { "family": "Inter", "weights": [600, 700] },
+    "body": { "family": "Inter", "weights": [400, 500, 700] },
+    "source": "google"
+  },
+  "languages": ["en"],
+  "defaultLanguage": "en",
+  "defaultTheme": "emerald",
+  "defaultAccent": "emerald"
+}

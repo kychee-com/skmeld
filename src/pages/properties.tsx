@@ -12,6 +12,7 @@ import {
   X,
   Layers,
 } from "lucide-react";
+import { t } from "../lib/i18n";
 
 interface Property {
   id: string;
@@ -233,7 +234,7 @@ export function PropertiesPage() {
   };
 
   const spaceTypeLabel = (key: string) =>
-    spaceTypes?.find((t) => t.key === key)?.label || key;
+    spaceTypes?.find((st) => st.key === key)?.label || key;
 
   if (isLoading) {
     return (
@@ -252,12 +253,12 @@ export function PropertiesPage() {
   return (
     <div className="max-w-4xl mx-auto p-6 space-y-6">
       <div className="flex items-center justify-between">
-        <h1 className="text-2xl font-bold">Properties</h1>
+        <h1 className="text-2xl font-bold">{t("properties.heading")}</h1>
         <button
           onClick={openAddProperty}
           className="flex items-center gap-1.5 px-3 py-1.5 bg-primary text-primary-foreground rounded-md text-sm font-medium hover:opacity-90"
         >
-          <Plus className="h-4 w-4" /> Add Property
+          <Plus className="h-4 w-4" /> {t("properties.add")}
         </button>
       </div>
 
@@ -266,7 +267,7 @@ export function PropertiesPage() {
         <div className="bg-card border rounded-lg p-5">
           <div className="flex items-center justify-between mb-4">
             <h2 className="text-sm font-semibold">
-              {editingProperty ? "Edit Property" : "New Property"}
+              {editingProperty ? t("properties.edit") : t("properties.new")}
             </h2>
             <button onClick={closePropertyForm} className="text-muted-foreground hover:text-foreground">
               <X className="h-4 w-4" />
@@ -275,7 +276,7 @@ export function PropertiesPage() {
           <form onSubmit={handlePropertySubmit} className="space-y-3">
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
               <div>
-                <label className="text-xs font-medium text-muted-foreground">Name *</label>
+                <label className="text-xs font-medium text-muted-foreground">{t("properties.name_label")}</label>
                 <input
                   required
                   value={propertyForm.name}
@@ -284,17 +285,17 @@ export function PropertiesPage() {
                 />
               </div>
               <div>
-                <label className="text-xs font-medium text-muted-foreground">Code *</label>
+                <label className="text-xs font-medium text-muted-foreground">{t("properties.code_label")}</label>
                 <input
                   required
                   value={propertyForm.code}
                   onChange={(e) => setPropertyForm((f) => ({ ...f, code: e.target.value }))}
                   className="mt-1 w-full rounded-md border bg-background px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-ring"
-                  placeholder="e.g. BLDG-A"
+                  placeholder={t("properties.code_placeholder")}
                 />
               </div>
               <div className="sm:col-span-2">
-                <label className="text-xs font-medium text-muted-foreground">Street</label>
+                <label className="text-xs font-medium text-muted-foreground">{t("properties.street_label")}</label>
                 <input
                   value={propertyForm.street_1}
                   onChange={(e) => setPropertyForm((f) => ({ ...f, street_1: e.target.value }))}
@@ -302,7 +303,7 @@ export function PropertiesPage() {
                 />
               </div>
               <div>
-                <label className="text-xs font-medium text-muted-foreground">City</label>
+                <label className="text-xs font-medium text-muted-foreground">{t("properties.city_label")}</label>
                 <input
                   value={propertyForm.city}
                   onChange={(e) => setPropertyForm((f) => ({ ...f, city: e.target.value }))}
@@ -311,7 +312,7 @@ export function PropertiesPage() {
               </div>
               <div className="grid grid-cols-2 gap-3">
                 <div>
-                  <label className="text-xs font-medium text-muted-foreground">State</label>
+                  <label className="text-xs font-medium text-muted-foreground">{t("properties.state_label")}</label>
                   <input
                     value={propertyForm.state}
                     onChange={(e) => setPropertyForm((f) => ({ ...f, state: e.target.value }))}
@@ -319,7 +320,7 @@ export function PropertiesPage() {
                   />
                 </div>
                 <div>
-                  <label className="text-xs font-medium text-muted-foreground">Postal Code</label>
+                  <label className="text-xs font-medium text-muted-foreground">{t("properties.postal_label")}</label>
                   <input
                     value={propertyForm.postal_code}
                     onChange={(e) => setPropertyForm((f) => ({ ...f, postal_code: e.target.value }))}
@@ -334,14 +335,14 @@ export function PropertiesPage() {
                 onClick={closePropertyForm}
                 className="px-3 py-1.5 text-sm rounded-md border hover:bg-muted"
               >
-                Cancel
+                {t("properties.cancel")}
               </button>
               <button
                 type="submit"
                 disabled={createProperty.isPending || updateProperty.isPending}
                 className="px-3 py-1.5 text-sm rounded-md bg-primary text-primary-foreground hover:opacity-90 disabled:opacity-50"
               >
-                {editingProperty ? "Save Changes" : "Create Property"}
+                {editingProperty ? t("properties.save_changes") : t("properties.create")}
               </button>
             </div>
           </form>
@@ -352,9 +353,9 @@ export function PropertiesPage() {
       {activeProperties.length === 0 && !showPropertyForm && (
         <div className="text-center py-12">
           <Building2 className="h-10 w-10 text-muted-foreground/30 mx-auto mb-3" />
-          <p className="text-muted-foreground">No properties yet</p>
+          <p className="text-muted-foreground">{t("properties.no_properties")}</p>
           <button onClick={openAddProperty} className="text-sm text-primary mt-2 hover:underline">
-            Add your first property
+            {t("properties.add_first")}
           </button>
         </div>
       )}
@@ -384,12 +385,12 @@ export function PropertiesPage() {
                     </p>
                   )}
                 </div>
-                <span className="text-xs text-muted-foreground">{propSpaces.length} space{propSpaces.length !== 1 ? "s" : ""}</span>
+                <span className="text-xs text-muted-foreground">{t("properties.spaces_count", { count: propSpaces.length })}</span>
                 <button onClick={() => openEditProperty(prop)} className="text-muted-foreground hover:text-foreground p-1">
                   <Pencil className="h-3.5 w-3.5" />
                 </button>
                 <button
-                  onClick={() => { if (confirm("Archive this property?")) archiveProperty.mutate(prop.id); }}
+                  onClick={() => { if (confirm(t("properties.archive_confirm"))) archiveProperty.mutate(prop.id); }}
                   className="text-muted-foreground hover:text-destructive p-1"
                 >
                   <Archive className="h-3.5 w-3.5" />
@@ -400,7 +401,7 @@ export function PropertiesPage() {
               {isExpanded && (
                 <div className="border-t px-4 pb-4 pt-3 space-y-2">
                   {propSpaces.length === 0 && showSpaceFormFor !== prop.id && (
-                    <p className="text-xs text-muted-foreground py-2">No spaces defined</p>
+                    <p className="text-xs text-muted-foreground py-2">{t("properties.no_spaces")}</p>
                   )}
 
                   {propSpaces.map((space) => (
@@ -415,13 +416,13 @@ export function PropertiesPage() {
                       </div>
                       <span className="text-xs text-muted-foreground">{spaceTypeLabel(space.space_type_key)}</span>
                       {space.floor != null && (
-                        <span className="text-xs text-muted-foreground">Floor {space.floor}</span>
+                        <span className="text-xs text-muted-foreground">{t("properties.floor", { floor: String(space.floor) })}</span>
                       )}
                       <button onClick={() => openEditSpace(space)} className="text-muted-foreground hover:text-foreground p-1">
                         <Pencil className="h-3 w-3" />
                       </button>
                       <button
-                        onClick={() => { if (confirm("Archive this space?")) archiveSpace.mutate(space.id); }}
+                        onClick={() => { if (confirm(t("properties.archive_space_confirm"))) archiveSpace.mutate(space.id); }}
                         className="text-muted-foreground hover:text-destructive p-1"
                       >
                         <Archive className="h-3 w-3" />
@@ -436,14 +437,14 @@ export function PropertiesPage() {
                       className="bg-muted/20 border rounded-md p-3 space-y-3"
                     >
                       <div className="flex items-center justify-between">
-                        <h4 className="text-xs font-semibold">{editingSpace ? "Edit Space" : "New Space"}</h4>
+                        <h4 className="text-xs font-semibold">{editingSpace ? t("properties.edit_space") : t("properties.new_space")}</h4>
                         <button type="button" onClick={closeSpaceForm} className="text-muted-foreground hover:text-foreground">
                           <X className="h-3.5 w-3.5" />
                         </button>
                       </div>
                       <div className="grid grid-cols-2 gap-3">
                         <div>
-                          <label className="text-xs font-medium text-muted-foreground">Name *</label>
+                          <label className="text-xs font-medium text-muted-foreground">{t("properties.space_name_label")}</label>
                           <input
                             required
                             value={spaceForm.name}
@@ -452,31 +453,31 @@ export function PropertiesPage() {
                           />
                         </div>
                         <div>
-                          <label className="text-xs font-medium text-muted-foreground">Code *</label>
+                          <label className="text-xs font-medium text-muted-foreground">{t("properties.space_code_label")}</label>
                           <input
                             required
                             value={spaceForm.code}
                             onChange={(e) => setSpaceForm((f) => ({ ...f, code: e.target.value }))}
                             className="mt-1 w-full rounded-md border bg-background px-3 py-1.5 text-sm focus:outline-none focus:ring-2 focus:ring-ring"
-                            placeholder="e.g. 101"
+                            placeholder={t("properties.space_code_placeholder")}
                           />
                         </div>
                         <div>
-                          <label className="text-xs font-medium text-muted-foreground">Type *</label>
+                          <label className="text-xs font-medium text-muted-foreground">{t("properties.space_type_label")}</label>
                           <select
                             required
                             value={spaceForm.space_type_key}
                             onChange={(e) => setSpaceForm((f) => ({ ...f, space_type_key: e.target.value }))}
                             className="mt-1 w-full rounded-md border bg-background px-3 py-1.5 text-sm focus:outline-none focus:ring-2 focus:ring-ring"
                           >
-                            <option value="">Select type...</option>
-                            {spaceTypes?.map((t) => (
-                              <option key={t.key} value={t.key}>{t.label}</option>
+                            <option value="">{t("properties.space_type_placeholder")}</option>
+                            {spaceTypes?.map((st) => (
+                              <option key={st.key} value={st.key}>{st.label}</option>
                             ))}
                           </select>
                         </div>
                         <div>
-                          <label className="text-xs font-medium text-muted-foreground">Floor</label>
+                          <label className="text-xs font-medium text-muted-foreground">{t("properties.space_floor_label")}</label>
                           <input
                             type="number"
                             value={spaceForm.floor}
@@ -491,14 +492,14 @@ export function PropertiesPage() {
                           onClick={closeSpaceForm}
                           className="px-3 py-1 text-xs rounded-md border hover:bg-muted"
                         >
-                          Cancel
+                          {t("properties.cancel")}
                         </button>
                         <button
                           type="submit"
                           disabled={createSpace.isPending || updateSpace.isPending}
                           className="px-3 py-1 text-xs rounded-md bg-primary text-primary-foreground hover:opacity-90 disabled:opacity-50"
                         >
-                          {editingSpace ? "Save" : "Add Space"}
+                          {editingSpace ? t("properties.space_save") : t("properties.space_add")}
                         </button>
                       </div>
                     </form>
@@ -507,7 +508,7 @@ export function PropertiesPage() {
                       onClick={() => openAddSpace(prop.id)}
                       className="flex items-center gap-1.5 text-xs text-primary hover:underline pt-1"
                     >
-                      <Plus className="h-3 w-3" /> Add space
+                      <Plus className="h-3 w-3" /> {t("properties.add_space")}
                     </button>
                   )}
                 </div>
@@ -520,7 +521,7 @@ export function PropertiesPage() {
       {/* Archived properties */}
       {archivedProperties.length > 0 && (
         <div>
-          <h2 className="text-sm font-semibold text-muted-foreground mb-2">Archived</h2>
+          <h2 className="text-sm font-semibold text-muted-foreground mb-2">{t("properties.archived")}</h2>
           <div className="space-y-2">
             {archivedProperties.map((prop) => (
               <div key={prop.id} className="flex items-center gap-3 p-4 bg-card border rounded-lg opacity-60">
@@ -529,7 +530,7 @@ export function PropertiesPage() {
                   <span className="text-sm font-medium">{prop.name}</span>
                   <span className="text-xs text-muted-foreground ml-2 font-mono">{prop.code}</span>
                 </div>
-                <span className="text-xs text-muted-foreground">Archived</span>
+                <span className="text-xs text-muted-foreground">{t("properties.archived")}</span>
               </div>
             ))}
           </div>

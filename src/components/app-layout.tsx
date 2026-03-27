@@ -1,6 +1,7 @@
 import { Outlet, NavLink, useNavigate } from "react-router-dom";
 import { useAuth } from "../lib/auth";
 import { cn } from "../lib/utils";
+import { t } from "../lib/i18n";
 import {
   LayoutDashboard,
   ClipboardList,
@@ -23,23 +24,25 @@ interface NavItem {
   roles: string[];
 }
 
-const navItems: NavItem[] = [
-  { label: "Board", path: "/app/board", icon: <LayoutDashboard className="h-4 w-4" />, roles: ["owner_admin", "staff"] },
-  { label: "My Requests", path: "/app/my-requests", icon: <ClipboardList className="h-4 w-4" />, roles: ["resident"] },
-  { label: "Report Issue", path: "/app/report", icon: <PlusCircle className="h-4 w-4" />, roles: ["owner_admin", "staff", "resident"] },
-  { label: "Properties", path: "/app/properties", icon: <Building2 className="h-4 w-4" />, roles: ["owner_admin", "staff"] },
-  { label: "People", path: "/app/people", icon: <Users className="h-4 w-4" />, roles: ["owner_admin"] },
-  { label: "Vendors", path: "/app/vendors", icon: <Wrench className="h-4 w-4" />, roles: ["owner_admin", "staff"] },
-  { label: "Reports", path: "/app/reports", icon: <BarChart3 className="h-4 w-4" />, roles: ["owner_admin", "staff"] },
-  { label: "Settings", path: "/app/settings", icon: <Settings className="h-4 w-4" />, roles: ["owner_admin"] },
-];
+function getNavItems(): NavItem[] {
+  return [
+    { label: t("nav.board"), path: "/app/board", icon: <LayoutDashboard className="h-4 w-4" />, roles: ["owner_admin", "staff"] },
+    { label: t("nav.my_requests"), path: "/app/my-requests", icon: <ClipboardList className="h-4 w-4" />, roles: ["resident"] },
+    { label: t("nav.report_issue"), path: "/app/report", icon: <PlusCircle className="h-4 w-4" />, roles: ["owner_admin", "staff", "resident"] },
+    { label: t("nav.properties"), path: "/app/properties", icon: <Building2 className="h-4 w-4" />, roles: ["owner_admin", "staff"] },
+    { label: t("nav.people"), path: "/app/people", icon: <Users className="h-4 w-4" />, roles: ["owner_admin"] },
+    { label: t("nav.vendors"), path: "/app/vendors", icon: <Wrench className="h-4 w-4" />, roles: ["owner_admin", "staff"] },
+    { label: t("nav.reports"), path: "/app/reports", icon: <BarChart3 className="h-4 w-4" />, roles: ["owner_admin", "staff"] },
+    { label: t("nav.settings"), path: "/app/settings", icon: <Settings className="h-4 w-4" />, roles: ["owner_admin"] },
+  ];
+}
 
 export function AppLayout() {
   const { profile, logout } = useAuth();
   const navigate = useNavigate();
   const [sidebarOpen, setSidebarOpen] = useState(false);
 
-  const visibleItems = navItems.filter(
+  const visibleItems = getNavItems().filter(
     (item) => profile && item.roles.includes(profile.role_key),
   );
 
@@ -61,7 +64,7 @@ export function AppLayout() {
         sidebarOpen ? "translate-x-0" : "-translate-x-full",
       )}>
         <div className="flex items-center justify-between h-14 px-4 border-b">
-          <span className="text-lg font-semibold text-primary">SkMeld</span>
+          <span className="text-lg font-semibold text-primary">{t("auth.brand")}</span>
           <button className="lg:hidden" onClick={() => setSidebarOpen(false)}>
             <X className="h-5 w-5" />
           </button>
@@ -96,7 +99,7 @@ export function AppLayout() {
             className="flex items-center gap-2 text-sm text-muted-foreground hover:text-foreground transition-colors w-full px-1"
           >
             <LogOut className="h-4 w-4" />
-            Sign out
+            {t("nav.sign_out")}
           </button>
         </div>
       </aside>

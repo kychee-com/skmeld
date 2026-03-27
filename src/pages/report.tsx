@@ -4,6 +4,7 @@ import { useQuery } from "@tanstack/react-query";
 import { apiGet, invokeFunction } from "../api/client";
 import { cn } from "../lib/utils";
 import { Camera, AlertTriangle, X } from "lucide-react";
+import { t } from "../lib/i18n";
 
 interface Property { id: string; name: string; }
 interface Space { id: string; property_id: string; name: string; }
@@ -70,7 +71,7 @@ export function ReportPage() {
       });
       navigate("/app/my-requests");
     } catch (err) {
-      setError(err instanceof Error ? err.message : "Failed to submit request");
+      setError(err instanceof Error ? err.message : t("report.submit_failed"));
     } finally {
       setSubmitting(false);
     }
@@ -86,16 +87,16 @@ export function ReportPage() {
         </div>
       )}
 
-      <h1 className="text-xl font-bold mb-6">Report an Issue</h1>
+      <h1 className="text-xl font-bold mb-6">{t("report.heading")}</h1>
 
       <form onSubmit={handleSubmit} className="space-y-5">
         {error && <div className="bg-destructive/10 text-destructive text-sm p-3 rounded-md">{error}</div>}
 
         {/* Property */}
         <div>
-          <label className="block text-sm font-medium mb-1">Property *</label>
+          <label className="block text-sm font-medium mb-1">{t("report.property_label")}</label>
           <select value={propertyId} onChange={e => { setPropertyId(e.target.value); setSpaceId(""); }} required className="w-full px-3 py-2 border rounded-md bg-background text-sm">
-            <option value="">Select property...</option>
+            <option value="">{t("report.property_placeholder")}</option>
             {properties?.map(p => <option key={p.id} value={p.id}>{p.name}</option>)}
           </select>
         </div>
@@ -103,9 +104,9 @@ export function ReportPage() {
         {/* Space */}
         {spaces.length > 0 && (
           <div>
-            <label className="block text-sm font-medium mb-1">Unit / Space</label>
+            <label className="block text-sm font-medium mb-1">{t("report.space_label")}</label>
             <select value={spaceId} onChange={e => setSpaceId(e.target.value)} className="w-full px-3 py-2 border rounded-md bg-background text-sm">
-              <option value="">Select unit...</option>
+              <option value="">{t("report.space_placeholder")}</option>
               {spaces.map(s => <option key={s.id} value={s.id}>{s.name}</option>)}
             </select>
           </div>
@@ -113,7 +114,7 @@ export function ReportPage() {
 
         {/* Category cards */}
         <div>
-          <label className="block text-sm font-medium mb-2">Category</label>
+          <label className="block text-sm font-medium mb-2">{t("report.category_label")}</label>
           <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
             {categories?.map(cat => (
               <button
@@ -136,26 +137,26 @@ export function ReportPage() {
 
         {/* Title */}
         <div>
-          <label className="block text-sm font-medium mb-1">What's the issue? *</label>
-          <input type="text" value={title} onChange={e => setTitle(e.target.value)} required placeholder="e.g., Kitchen faucet dripping" className="w-full px-3 py-2 border rounded-md bg-background text-sm" />
+          <label className="block text-sm font-medium mb-1">{t("report.title_label")}</label>
+          <input type="text" value={title} onChange={e => setTitle(e.target.value)} required placeholder={t("report.title_placeholder")} className="w-full px-3 py-2 border rounded-md bg-background text-sm" />
         </div>
 
         {/* Description */}
         <div>
-          <label className="block text-sm font-medium mb-1">Details</label>
-          <textarea value={description} onChange={e => setDescription(e.target.value)} rows={3} placeholder="Describe the issue in more detail..." className="w-full px-3 py-2 border rounded-md bg-background text-sm resize-none" />
+          <label className="block text-sm font-medium mb-1">{t("report.details_label")}</label>
+          <textarea value={description} onChange={e => setDescription(e.target.value)} rows={3} placeholder={t("report.details_placeholder")} className="w-full px-3 py-2 border rounded-md bg-background text-sm resize-none" />
         </div>
 
         {/* Location */}
         <div>
-          <label className="block text-sm font-medium mb-1">Exact location</label>
-          <input type="text" value={locationDetail} onChange={e => setLocationDetail(e.target.value)} placeholder="e.g., Master bathroom, under the sink" className="w-full px-3 py-2 border rounded-md bg-background text-sm" />
+          <label className="block text-sm font-medium mb-1">{t("report.location_label")}</label>
+          <input type="text" value={locationDetail} onChange={e => setLocationDetail(e.target.value)} placeholder={t("report.location_placeholder")} className="w-full px-3 py-2 border rounded-md bg-background text-sm" />
         </div>
 
         {/* Priority */}
         {settings?.allow_requester_priority_selection && (
           <div>
-            <label className="block text-sm font-medium mb-1">Priority</label>
+            <label className="block text-sm font-medium mb-1">{t("report.priority_label")}</label>
             <select value={priorityKey || defaultPriority} onChange={e => setPriorityKey(e.target.value)} className="w-full px-3 py-2 border rounded-md bg-background text-sm">
               {priorities?.map(p => <option key={p.key} value={p.key}>{p.label}</option>)}
             </select>
@@ -165,9 +166,9 @@ export function ReportPage() {
         {/* Entry preference */}
         {settings?.show_entry_preference && (
           <div>
-            <label className="block text-sm font-medium mb-1">Entry preference</label>
+            <label className="block text-sm font-medium mb-1">{t("report.entry_pref_label")}</label>
             <select value={entryPrefKey} onChange={e => setEntryPrefKey(e.target.value)} className="w-full px-3 py-2 border rounded-md bg-background text-sm">
-              <option value="">Select...</option>
+              <option value="">{t("report.entry_pref_placeholder")}</option>
               {entryPrefs?.map(ep => <option key={ep.key} value={ep.key}>{ep.label}</option>)}
             </select>
           </div>
@@ -176,10 +177,10 @@ export function ReportPage() {
         {/* Pets */}
         {settings?.show_pets_field && (
           <div className="flex items-center gap-3">
-            <label className="text-sm font-medium">Pets in the unit?</label>
+            <label className="text-sm font-medium">{t("report.pets_label")}</label>
             <div className="flex gap-2">
-              <button type="button" onClick={() => setPetsPresent(true)} className={cn("px-3 py-1 text-xs rounded-md border", petsPresent === true ? "bg-primary/10 text-primary border-primary" : "hover:bg-accent")}>Yes</button>
-              <button type="button" onClick={() => setPetsPresent(false)} className={cn("px-3 py-1 text-xs rounded-md border", petsPresent === false ? "bg-primary/10 text-primary border-primary" : "hover:bg-accent")}>No</button>
+              <button type="button" onClick={() => setPetsPresent(true)} className={cn("px-3 py-1 text-xs rounded-md border", petsPresent === true ? "bg-primary/10 text-primary border-primary" : "hover:bg-accent")}>{t("report.pets_yes")}</button>
+              <button type="button" onClick={() => setPetsPresent(false)} className={cn("px-3 py-1 text-xs rounded-md border", petsPresent === false ? "bg-primary/10 text-primary border-primary" : "hover:bg-accent")}>{t("report.pets_no")}</button>
             </div>
           </div>
         )}
@@ -187,20 +188,20 @@ export function ReportPage() {
         {/* Visit window */}
         {settings?.show_preferred_visit_window && (
           <div>
-            <label className="block text-sm font-medium mb-1">Preferred visit window</label>
-            <input type="text" value={visitWindow} onChange={e => setVisitWindow(e.target.value)} placeholder="e.g., Weekday mornings" className="w-full px-3 py-2 border rounded-md bg-background text-sm" />
+            <label className="block text-sm font-medium mb-1">{t("report.visit_window_label")}</label>
+            <input type="text" value={visitWindow} onChange={e => setVisitWindow(e.target.value)} placeholder={t("report.visit_window_placeholder")} className="w-full px-3 py-2 border rounded-md bg-background text-sm" />
           </div>
         )}
 
         {/* Access instructions */}
         <div>
-          <label className="block text-sm font-medium mb-1">Access instructions</label>
-          <input type="text" value={accessInstructions} onChange={e => setAccessInstructions(e.target.value)} placeholder="e.g., Gate code 1234, key under mat" className="w-full px-3 py-2 border rounded-md bg-background text-sm" />
+          <label className="block text-sm font-medium mb-1">{t("report.access_label")}</label>
+          <input type="text" value={accessInstructions} onChange={e => setAccessInstructions(e.target.value)} placeholder={t("report.access_placeholder")} className="w-full px-3 py-2 border rounded-md bg-background text-sm" />
         </div>
 
         {/* Photos */}
         <div>
-          <label className="block text-sm font-medium mb-2">Photos (up to 6)</label>
+          <label className="block text-sm font-medium mb-2">{t("report.photos_label")}</label>
           <div className="flex flex-wrap gap-2">
             {photos.map((photo, i) => (
               <div key={i} className="relative w-20 h-20 rounded-md overflow-hidden border">
@@ -225,7 +226,7 @@ export function ReportPage() {
           disabled={submitting || !propertyId || !title}
           className="w-full py-2.5 bg-primary text-primary-foreground rounded-md font-medium hover:opacity-90 disabled:opacity-50 transition-opacity"
         >
-          {submitting ? "Submitting..." : "Submit Request"}
+          {submitting ? t("report.submitting") : t("report.submit")}
         </button>
       </form>
     </div>

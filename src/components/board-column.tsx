@@ -1,5 +1,6 @@
 import { useDroppable } from "@dnd-kit/core";
 import { cn } from "../lib/utils";
+import { t } from "../lib/i18n";
 import type { BoardCard, BoardStatus } from "../hooks/use-board";
 import { BoardCardComponent } from "./board-card";
 
@@ -45,7 +46,7 @@ export function BoardColumn({ status, cards, onCardClick }: BoardColumnProps) {
       <div className="flex-1 overflow-y-auto px-2 pb-2 space-y-2 min-h-[100px]">
         {cards.length === 0 && (
           <div className="flex items-center justify-center h-20 text-xs text-muted-foreground/50">
-            No requests
+            {t("board.no_requests")}
           </div>
         )}
         {cards.map((card) => (

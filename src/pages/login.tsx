@@ -1,6 +1,7 @@
 import { useState, useEffect } from "react";
 import { useNavigate, useSearchParams } from "react-router-dom";
 import { useAuth } from "../lib/auth";
+import { t } from "../lib/i18n";
 
 export function LoginPage() {
   const { login } = useAuth();
@@ -31,7 +32,7 @@ export function LoginPage() {
       await login(email, password);
       navigate(redirect, { replace: true });
     } catch (err) {
-      setError(err instanceof Error ? err.message : "Login failed");
+      setError(err instanceof Error ? err.message : t("auth.login_failed"));
     } finally {
       setLoading(false);
     }
@@ -41,14 +42,14 @@ export function LoginPage() {
     <div className="min-h-screen flex items-center justify-center bg-background p-4">
       <div className="w-full max-w-sm space-y-6">
         <div className="text-center">
-          <h1 className="text-3xl font-bold text-primary">SkMeld</h1>
-          <p className="text-muted-foreground mt-1">Sign in to your account</p>
+          <h1 className="text-3xl font-bold text-primary">{t("auth.brand")}</h1>
+          <p className="text-muted-foreground mt-1">{t("auth.subtitle")}</p>
         </div>
 
         <form onSubmit={handleSubmit} className="space-y-4">
           {expiredNotice && !error && (
             <div className="bg-amber-50 border border-amber-200 text-amber-800 text-sm p-3 rounded-md">
-              Your session expired. Please sign in again.
+              {t("toast.session_expired")}
             </div>
           )}
 
@@ -57,7 +58,7 @@ export function LoginPage() {
           )}
 
           <div>
-            <label htmlFor="email" className="block text-sm font-medium mb-1">Email</label>
+            <label htmlFor="email" className="block text-sm font-medium mb-1">{t("auth.email_label")}</label>
             <input
               id="email"
               type="email"
@@ -65,12 +66,12 @@ export function LoginPage() {
               value={email}
               onChange={(e) => setEmail(e.target.value)}
               className="w-full px-3 py-2 border rounded-md bg-background text-foreground focus:outline-none focus:ring-2 focus:ring-primary"
-              placeholder="you@example.com"
+              placeholder={t("auth.email_placeholder")}
             />
           </div>
 
           <div>
-            <label htmlFor="password" className="block text-sm font-medium mb-1">Password</label>
+            <label htmlFor="password" className="block text-sm font-medium mb-1">{t("auth.password_label")}</label>
             <input
               id="password"
               type="password"
@@ -78,7 +79,7 @@ export function LoginPage() {
               value={password}
               onChange={(e) => setPassword(e.target.value)}
               className="w-full px-3 py-2 border rounded-md bg-background text-foreground focus:outline-none focus:ring-2 focus:ring-primary"
-              placeholder="••••••••"
+              placeholder={t("auth.password_placeholder")}
             />
           </div>
 
@@ -87,7 +88,7 @@ export function LoginPage() {
             disabled={loading}
             className="w-full py-2 px-4 bg-primary text-primary-foreground rounded-md font-medium hover:opacity-90 disabled:opacity-50 transition-opacity"
           >
-            {loading ? "Signing in..." : "Sign in"}
+            {loading ? t("auth.signing_in") : t("auth.sign_in")}
           </button>
         </form>
       </div>

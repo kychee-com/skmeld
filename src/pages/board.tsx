@@ -7,6 +7,7 @@ import { BoardCardComponent } from "../components/board-card";
 import { BoardFilters } from "../components/board-filters";
 import { invokeFunction } from "../api/client";
 import { useQueryClient } from "@tanstack/react-query";
+import { t } from "../lib/i18n";
 
 export function BoardPage() {
   const { data: statuses, isLoading: statusesLoading } = useBoardStatuses();
@@ -94,7 +95,7 @@ export function BoardPage() {
   return (
     <div className="h-full flex flex-col">
       <div className="p-4 pb-2 flex items-center justify-between">
-        <h1 className="text-xl font-bold">Board</h1>
+        <h1 className="text-xl font-bold">{t("board.heading")}</h1>
         <BoardFilters filters={filters} onChange={setFilters} />
       </div>
 

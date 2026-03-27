@@ -6,6 +6,7 @@ import { CommentComposer } from "../components/comment-composer";
 import { StatusActions } from "../components/status-actions";
 import { ArrowLeft, MapPin, User, Clock, Calendar, Wrench } from "lucide-react";
 import { cn } from "../lib/utils";
+import { t } from "../lib/i18n";
 
 const priorityStyles: Record<string, string> = {
   urgent: "bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-400",
@@ -34,8 +35,8 @@ export function RequestDetailPage() {
   if (!request) {
     return (
       <div className="p-6">
-        <h1 className="text-xl font-bold text-destructive">Request not found</h1>
-        <button onClick={() => navigate(-1)} className="text-sm text-primary mt-2">Go back</button>
+        <h1 className="text-xl font-bold text-destructive">{t("detail.not_found")}</h1>
+        <button onClick={() => navigate(-1)} className="text-sm text-primary mt-2">{t("detail.go_back")}</button>
       </div>
     );
   }
@@ -47,7 +48,7 @@ export function RequestDetailPage() {
       {/* Header */}
       <div>
         <button onClick={() => navigate(-1)} className="text-sm text-muted-foreground hover:text-foreground flex items-center gap-1 mb-3">
-          <ArrowLeft className="h-4 w-4" /> Back
+          <ArrowLeft className="h-4 w-4" /> {t("detail.back")}
         </button>
         <div className="flex items-start justify-between gap-4">
           <div>
@@ -70,7 +71,7 @@ export function RequestDetailPage() {
         )}
         <div className="flex items-center gap-2">
           <MapPin className="h-4 w-4 text-muted-foreground flex-shrink-0" />
-          <span>{request.location_detail || "No location specified"}</span>
+          <span>{request.location_detail || t("detail.no_location")}</span>
         </div>
         <div className="flex items-center gap-2">
           <User className="h-4 w-4 text-muted-foreground flex-shrink-0" />
@@ -78,24 +79,24 @@ export function RequestDetailPage() {
         </div>
         <div className="flex items-center gap-2">
           <Clock className="h-4 w-4 text-muted-foreground flex-shrink-0" />
-          <span>Submitted {new Date(request.created_at).toLocaleDateString()}</span>
+          <span>{t("detail.submitted", { date: new Date(request.created_at).toLocaleDateString() })}</span>
         </div>
         {request.scheduled_start_at && (
           <div className="flex items-center gap-2">
             <Calendar className="h-4 w-4 text-muted-foreground flex-shrink-0" />
-            <span>Scheduled {new Date(request.scheduled_start_at).toLocaleDateString()}</span>
+            <span>{t("detail.scheduled", { date: new Date(request.scheduled_start_at).toLocaleDateString() })}</span>
           </div>
         )}
         {request.resolution_summary && (
           <div className="sm:col-span-2 bg-green-50 dark:bg-green-900/20 rounded p-3 text-green-800 dark:text-green-300">
-            <span className="font-medium">Resolution: </span>{request.resolution_summary}
+            <span className="font-medium">{t("detail.resolution")}</span>{request.resolution_summary}
           </div>
         )}
       </div>
 
       {/* Activity timeline */}
       <div>
-        <h2 className="text-sm font-semibold mb-3">Activity</h2>
+        <h2 className="text-sm font-semibold mb-3">{t("detail.activity")}</h2>
         <ActivityTimeline items={activity || []} isStaff={!!isStaff} />
       </div>
 

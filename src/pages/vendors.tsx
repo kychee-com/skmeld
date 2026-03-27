@@ -2,6 +2,7 @@ import { useState } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { apiGet, apiPost, apiPatch } from "../api/client";
 import { cn } from "../lib/utils";
+import { t } from "../lib/i18n";
 import {
   Truck,
   Plus,
@@ -149,12 +150,12 @@ export function VendorsPage() {
   return (
     <div className="max-w-4xl mx-auto p-6 space-y-6">
       <div className="flex items-center justify-between">
-        <h1 className="text-2xl font-bold">Vendors</h1>
+        <h1 className="text-2xl font-bold">{t("vendors.heading")}</h1>
         <button
           onClick={openAdd}
           className="flex items-center gap-1.5 px-3 py-1.5 bg-primary text-primary-foreground rounded-md text-sm font-medium hover:opacity-90"
         >
-          <Plus className="h-4 w-4" /> Add Vendor
+          <Plus className="h-4 w-4" /> {t("vendors.add")}
         </button>
       </div>
 
@@ -163,7 +164,7 @@ export function VendorsPage() {
         <div className="bg-card border rounded-lg p-5">
           <div className="flex items-center justify-between mb-4">
             <h2 className="text-sm font-semibold">
-              {editingVendor ? "Edit Vendor" : "New Vendor"}
+              {editingVendor ? t("vendors.edit") : t("vendors.new")}
             </h2>
             <button onClick={closeForm} className="text-muted-foreground hover:text-foreground">
               <X className="h-4 w-4" />
@@ -172,7 +173,7 @@ export function VendorsPage() {
           <form onSubmit={handleSubmit} className="space-y-3">
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
               <div>
-                <label className="text-xs font-medium text-muted-foreground">Company Name *</label>
+                <label className="text-xs font-medium text-muted-foreground">{t("vendors.company_name_label")}</label>
                 <input
                   required
                   value={form.name}
@@ -181,7 +182,7 @@ export function VendorsPage() {
                 />
               </div>
               <div>
-                <label className="text-xs font-medium text-muted-foreground">Primary Contact</label>
+                <label className="text-xs font-medium text-muted-foreground">{t("vendors.primary_contact_label")}</label>
                 <input
                   value={form.primary_contact_name}
                   onChange={(e) => setForm((f) => ({ ...f, primary_contact_name: e.target.value }))}
@@ -189,7 +190,7 @@ export function VendorsPage() {
                 />
               </div>
               <div>
-                <label className="text-xs font-medium text-muted-foreground">Email</label>
+                <label className="text-xs font-medium text-muted-foreground">{t("vendors.email_label")}</label>
                 <input
                   type="email"
                   value={form.email}
@@ -198,7 +199,7 @@ export function VendorsPage() {
                 />
               </div>
               <div>
-                <label className="text-xs font-medium text-muted-foreground">Phone</label>
+                <label className="text-xs font-medium text-muted-foreground">{t("vendors.phone_label")}</label>
                 <input
                   type="tel"
                   value={form.phone}
@@ -207,20 +208,20 @@ export function VendorsPage() {
                 />
               </div>
               <div>
-                <label className="text-xs font-medium text-muted-foreground">Trade Category</label>
+                <label className="text-xs font-medium text-muted-foreground">{t("vendors.trade_label")}</label>
                 <select
                   value={form.trade_category_key}
                   onChange={(e) => setForm((f) => ({ ...f, trade_category_key: e.target.value }))}
                   className="mt-1 w-full rounded-md border bg-background px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-ring"
                 >
-                  <option value="">Select category...</option>
+                  <option value="">{t("vendors.trade_placeholder")}</option>
                   {tradeCategories.map((c) => (
                     <option key={c.key} value={c.key}>{c.label}</option>
                   ))}
                 </select>
               </div>
               <div className="sm:col-span-2">
-                <label className="text-xs font-medium text-muted-foreground">Notes</label>
+                <label className="text-xs font-medium text-muted-foreground">{t("vendors.notes_label")}</label>
                 <textarea
                   value={form.notes}
                   onChange={(e) => setForm((f) => ({ ...f, notes: e.target.value }))}
@@ -235,14 +236,14 @@ export function VendorsPage() {
                 onClick={closeForm}
                 className="px-3 py-1.5 text-sm rounded-md border hover:bg-muted"
               >
-                Cancel
+                {t("vendors.cancel")}
               </button>
               <button
                 type="submit"
                 disabled={createVendor.isPending || updateVendor.isPending}
                 className="px-3 py-1.5 text-sm rounded-md bg-primary text-primary-foreground hover:opacity-90 disabled:opacity-50"
               >
-                {editingVendor ? "Save Changes" : "Add Vendor"}
+                {editingVendor ? t("vendors.save_changes") : t("vendors.add_button")}
               </button>
             </div>
           </form>
@@ -253,9 +254,9 @@ export function VendorsPage() {
       {activeVendors.length === 0 && inactiveVendors.length === 0 && !showForm && (
         <div className="text-center py-12">
           <Truck className="h-10 w-10 text-muted-foreground/30 mx-auto mb-3" />
-          <p className="text-muted-foreground">No vendors yet</p>
+          <p className="text-muted-foreground">{t("vendors.no_vendors")}</p>
           <button onClick={openAdd} className="text-sm text-primary mt-2 hover:underline">
-            Add your first vendor
+            {t("vendors.add_first")}
           </button>
         </div>
       )}
@@ -320,7 +321,7 @@ export function VendorsPage() {
       {/* Inactive vendors */}
       {inactiveVendors.length > 0 && (
         <div>
-          <h2 className="text-sm font-semibold text-muted-foreground mb-2">Inactive</h2>
+          <h2 className="text-sm font-semibold text-muted-foreground mb-2">{t("vendors.inactive")}</h2>
           <div className="space-y-2">
             {inactiveVendors.map((vendor) => (
               <div key={vendor.id} className="bg-card border rounded-lg p-4 opacity-60">

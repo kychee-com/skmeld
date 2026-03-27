@@ -1,6 +1,7 @@
 import type { ActivityItem } from "../hooks/use-request";
 import { cn } from "../lib/utils";
 import { MessageSquare, ArrowRight, Lock } from "lucide-react";
+import { t } from "../lib/i18n";
 
 interface ActivityTimelineProps {
   items: ActivityItem[];
@@ -23,7 +24,7 @@ function formatTime(dateStr: string): string {
 
 export function ActivityTimeline({ items, isStaff }: ActivityTimelineProps) {
   if (items.length === 0) {
-    return <div className="text-sm text-muted-foreground">No activity yet</div>;
+    return <div className="text-sm text-muted-foreground">{t("timeline.no_activity")}</div>;
   }
 
   return (
@@ -60,7 +61,7 @@ export function ActivityTimeline({ items, isStaff }: ActivityTimelineProps) {
                 <span className="font-medium text-foreground">{item.actor_name || "System"}</span>
                 {isInternal && (
                   <span className="flex items-center gap-0.5 text-[10px] text-amber-600 dark:text-amber-400 bg-amber-50 dark:bg-amber-900/20 px-1.5 py-0.5 rounded">
-                    <Lock className="h-2.5 w-2.5" /> Internal
+                    <Lock className="h-2.5 w-2.5" /> {t("timeline.internal")}
                   </span>
                 )}
                 <span className="text-xs text-muted-foreground">{formatTime(item.created_at)}</span>

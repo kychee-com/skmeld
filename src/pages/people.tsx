@@ -2,6 +2,7 @@ import { useState } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { apiGet, invokeFunction } from "../api/client";
 import { cn } from "../lib/utils";
+import { t } from "../lib/i18n";
 import {
   Users,
   Mail,
@@ -109,8 +110,8 @@ export function PeoplePage() {
   };
 
   const tabs = [
-    { key: "users" as const, label: "Active Users", count: profiles?.length || 0 },
-    { key: "invites" as const, label: "Pending Invites", count: invites?.length || 0 },
+    { key: "users" as const, label: t("people.active_users"), count: profiles?.length || 0 },
+    { key: "invites" as const, label: t("people.pending_invites"), count: invites?.length || 0 },
   ];
 
   const isLoading = activeTab === "users" ? profilesLoading : invitesLoading;
@@ -118,12 +119,12 @@ export function PeoplePage() {
   return (
     <div className="max-w-4xl mx-auto p-6 space-y-6">
       <div className="flex items-center justify-between">
-        <h1 className="text-2xl font-bold">People</h1>
+        <h1 className="text-2xl font-bold">{t("people.heading")}</h1>
         <button
           onClick={() => setShowInviteForm(true)}
           className="flex items-center gap-1.5 px-3 py-1.5 bg-primary text-primary-foreground rounded-md text-sm font-medium hover:opacity-90"
         >
-          <UserPlus className="h-4 w-4" /> Invite
+          <UserPlus className="h-4 w-4" /> {t("people.invite")}
         </button>
       </div>
 
@@ -164,8 +165,8 @@ export function PeoplePage() {
           <div className="flex-1 min-w-0">
             <p className="text-sm font-medium">
               {inviteResult.email_sent
-                ? "Invite email sent!"
-                : "Invite created — email could not be sent"}
+                ? t("people.invite_sent")
+                : t("people.invite_no_email")}
             </p>
             {inviteResult.email_error && (
               <p className="text-xs text-muted-foreground mt-0.5">{inviteResult.email_error}</p>
@@ -193,27 +194,27 @@ export function PeoplePage() {
       {showInviteForm && (
         <div className="bg-card border rounded-lg p-5">
           <div className="flex items-center justify-between mb-4">
-            <h2 className="text-sm font-semibold">Send Invite</h2>
+            <h2 className="text-sm font-semibold">{t("people.send_invite")}</h2>
             <button onClick={() => { setShowInviteForm(false); setInviteError(null); }} className="text-muted-foreground hover:text-foreground">
               <X className="h-4 w-4" />
             </button>
           </div>
-          <p className="text-xs text-muted-foreground mb-3">An invite email will be sent to the address below.</p>
+          <p className="text-xs text-muted-foreground mb-3">{t("people.invite_description")}</p>
           <form onSubmit={handleInviteSubmit} className="space-y-3">
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
               <div>
-                <label className="text-xs font-medium text-muted-foreground">Email *</label>
+                <label className="text-xs font-medium text-muted-foreground">{t("people.email_label")}</label>
                 <input
                   required
                   type="email"
                   value={inviteForm.email}
                   onChange={(e) => setInviteForm((f) => ({ ...f, email: e.target.value }))}
                   className="mt-1 w-full rounded-md border bg-background px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-ring"
-                  placeholder="user@example.com"
+                  placeholder={t("people.email_placeholder")}
                 />
               </div>
               <div>
-                <label className="text-xs font-medium text-muted-foreground">Full Name *</label>
+                <label className="text-xs font-medium text-muted-foreground">{t("people.name_label")}</label>
                 <input
                   required
                   value={inviteForm.full_name}
@@ -222,24 +223,24 @@ export function PeoplePage() {
                 />
               </div>
               <div>
-                <label className="text-xs font-medium text-muted-foreground">Role *</label>
+                <label className="text-xs font-medium text-muted-foreground">{t("people.role_label")}</label>
                 <select
                   required
                   value={inviteForm.role_key}
                   onChange={(e) => setInviteForm((f) => ({ ...f, role_key: e.target.value }))}
                   className="mt-1 w-full rounded-md border bg-background px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-ring"
                 >
-                  <option value="staff">Staff</option>
-                  <option value="resident">Resident</option>
+                  <option value="staff">{t("people.role_staff")}</option>
+                  <option value="resident">{t("people.role_resident")}</option>
                 </select>
               </div>
               <div>
-                <label className="text-xs font-medium text-muted-foreground">Space IDs (optional, comma-separated)</label>
+                <label className="text-xs font-medium text-muted-foreground">{t("people.space_ids_label")}</label>
                 <input
                   value={inviteForm.space_ids}
                   onChange={(e) => setInviteForm((f) => ({ ...f, space_ids: e.target.value }))}
                   className="mt-1 w-full rounded-md border bg-background px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-ring"
-                  placeholder="uuid1, uuid2"
+                  placeholder={t("people.space_ids_placeholder")}
                 />
               </div>
             </div>
@@ -252,14 +253,14 @@ export function PeoplePage() {
                 onClick={() => { setShowInviteForm(false); setInviteError(null); }}
                 className="px-3 py-1.5 text-sm rounded-md border hover:bg-muted"
               >
-                Cancel
+                {t("people.cancel")}
               </button>
               <button
                 type="submit"
                 disabled={sendInvite.isPending}
                 className="px-3 py-1.5 text-sm rounded-md bg-primary text-primary-foreground hover:opacity-90 disabled:opacity-50"
               >
-                {sendInvite.isPending ? "Sending..." : "Send Invite"}
+                {sendInvite.isPending ? t("people.sending") : t("people.send_invite_button")}
               </button>
             </div>
           </form>
@@ -281,7 +282,7 @@ export function PeoplePage() {
           {(!profiles || profiles.length === 0) && (
             <div className="text-center py-12">
               <Users className="h-10 w-10 text-muted-foreground/30 mx-auto mb-3" />
-              <p className="text-muted-foreground">No active users</p>
+              <p className="text-muted-foreground">{t("people.no_active_users")}</p>
             </div>
           )}
           <div className="space-y-2">
@@ -302,7 +303,7 @@ export function PeoplePage() {
                     {p.role_key.replace("_", " ")}
                   </span>
                   <span className="text-xs text-muted-foreground hidden sm:block">
-                    Joined {formatDate(p.created_at)}
+                    {t("people.joined", { date: formatDate(p.created_at) })}
                   </span>
                 </div>
               );
@@ -317,9 +318,9 @@ export function PeoplePage() {
           {(!invites || invites.length === 0) && (
             <div className="text-center py-12">
               <Mail className="h-10 w-10 text-muted-foreground/30 mx-auto mb-3" />
-              <p className="text-muted-foreground">No pending invites</p>
+              <p className="text-muted-foreground">{t("people.no_pending_invites")}</p>
               <button onClick={() => setShowInviteForm(true)} className="text-sm text-primary mt-2 hover:underline">
-                Send an invite
+                {t("people.send_an_invite")}
               </button>
             </div>
           )}
@@ -339,7 +340,7 @@ export function PeoplePage() {
                   {inv.role_key}
                 </span>
                 <span className="text-xs text-muted-foreground hidden sm:block">
-                  Sent {formatDate(inv.created_at)}
+                  {t("people.sent", { date: formatDate(inv.created_at) })}
                 </span>
               </div>
             ))}

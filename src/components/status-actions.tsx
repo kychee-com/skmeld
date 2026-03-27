@@ -3,17 +3,21 @@ import { useQueryClient } from "@tanstack/react-query";
 import { invokeFunction } from "../api/client";
 import type { MaintenanceRequest } from "../hooks/use-request";
 import { cn } from "../lib/utils";
+import { t } from "../lib/i18n";
 
-const transitionLabels: Record<string, string> = {
-  triaged: "Mark Under Review",
-  scheduled: "Schedule",
-  in_progress: "Start Work",
-  waiting_on_resident: "Wait on Resident",
-  waiting_on_vendor: "Wait on Vendor",
-  resolved: "Mark Resolved",
-  closed: "Close",
-  canceled: "Cancel",
-};
+function getTransitionLabel(key: string): string {
+  const labels: Record<string, string> = {
+    triaged: t("status.mark_under_review"),
+    scheduled: t("status.schedule"),
+    in_progress: t("status.start_work"),
+    waiting_on_resident: t("status.wait_resident"),
+    waiting_on_vendor: t("status.wait_vendor"),
+    resolved: t("status.mark_resolved"),
+    closed: t("status.close"),
+    canceled: t("status.cancel"),
+  };
+  return labels[key] || key;
+}
 
 const staffTransitions: Record<string, string[]> = {
   submitted: ["triaged", "scheduled", "in_progress", "canceled"],
@@ -49,7 +53,7 @@ export function StatusActions({ request, userRole }: StatusActionsProps) {
   if (transitions.length === 0) return null;
 
   const needsNote = ["waiting_on_resident", "resolved", "canceled"].includes(targetStatus);
-  const noteLabel = targetStatus === "resolved" ? "Resolution summary" : targetStatus === "canceled" ? "Cancellation reason" : "Note for resident";
+  const noteLabel = targetStatus === "resolved" ? t("status.resolution_summary") : targetStatus === "canceled" ? t("status.cancellation_reason") : t("status.note_resident");
 
   const handleTransition = async () => {
     if (needsNote && !note.trim()) return;
@@ -75,42 +79,42 @@ export function StatusActions({ request, userRole }: StatusActionsProps) {
     }
   };
 
-  const quickTransitions = transitions.filter((t) => !["waiting_on_resident", "resolved", "canceled"].includes(t));
-  const dialogTransitions = transitions.filter((t) => ["waiting_on_resident", "resolved", "canceled"].includes(t));
+  const quickTransitions = transitions.filter((tr) => !["waiting_on_resident", "resolved", "canceled"].includes(tr));
+  const dialogTransitions = transitions.filter((tr) => ["waiting_on_resident", "resolved", "canceled"].includes(tr));
   // Resident reopen needs a note
   const residentReopen = !isStaff && transitions.includes("triaged");
 
   return (
     <div className="flex items-center gap-2 flex-wrap">
-      {quickTransitions.map((t) => (
+      {quickTransitions.map((tr) => (
         <button
-          key={t}
+          key={tr}
           onClick={() => {
-            if (residentReopen && t === "triaged") {
-              setTargetStatus(t);
+            if (residentReopen && tr === "triaged") {
+              setTargetStatus(tr);
               setShowDialog(true);
             } else {
-              setTargetStatus(t);
+              setTargetStatus(tr);
               handleTransition();
             }
           }}
           className="px-3 py-1.5 text-xs font-medium border rounded-md hover:bg-accent transition-colors"
         >
-          {t === "triaged" && !isStaff ? "Still Not Fixed" : transitionLabels[t] || t}
+          {tr === "triaged" && !isStaff ? t("status.still_not_fixed") : getTransitionLabel(tr)}
         </button>
       ))}
-      {dialogTransitions.map((t) => (
+      {dialogTransitions.map((tr) => (
         <button
-          key={t}
-          onClick={() => { setTargetStatus(t); setShowDialog(true); }}
+          key={tr}
+          onClick={() => { setTargetStatus(tr); setShowDialog(true); }}
           className={cn(
             "px-3 py-1.5 text-xs font-medium rounded-md transition-colors",
-            t === "resolved" ? "bg-green-600 text-white hover:bg-green-700" :
-            t === "canceled" ? "bg-destructive text-destructive-foreground hover:opacity-90" :
+            tr === "resolved" ? "bg-green-600 text-white hover:bg-green-700" :
+            tr === "canceled" ? "bg-destructive text-destructive-foreground hover:opacity-90" :
             "border hover:bg-accent",
           )}
         >
-          {transitionLabels[t] || t}
+          {getTransitionLabel(tr)}
         </button>
       ))}
       {!isStaff && transitions.includes("closed") && (
@@ -118,7 +122,7 @@ export function StatusActions({ request, userRole }: StatusActionsProps) {
           onClick={() => { setTargetStatus("closed"); handleTransition(); }}
           className="px-3 py-1.5 text-xs font-medium bg-primary text-primary-foreground rounded-md hover:opacity-90"
         >
-          Confirm Fixed
+          {t("status.confirm_fixed")}
         </button>
       )}
 
@@ -126,7 +130,7 @@ export function StatusActions({ request, userRole }: StatusActionsProps) {
       {showDialog && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4">
           <div className="bg-card rounded-lg p-6 w-full max-w-md space-y-4 shadow-xl">
-            <h3 className="font-semibold">{transitionLabels[targetStatus] || targetStatus}</h3>
+            <h3 className="font-semibold">{getTransitionLabel(targetStatus)}</h3>
             <div>
               <label className="text-sm font-medium mb-1 block">{noteLabel}</label>
               <textarea
@@ -134,7 +138,7 @@ export function StatusActions({ request, userRole }: StatusActionsProps) {
                 onChange={(e) => setNote(e.target.value)}
                 rows={3}
                 className="w-full px-3 py-2 border rounded-md bg-background text-sm resize-none focus:outline-none focus:ring-2 focus:ring-primary"
-                placeholder={needsNote ? "Required..." : "Optional note..."}
+                placeholder={needsNote ? t("status.required_placeholder") : t("status.optional_placeholder")}
               />
             </div>
             <div className="flex justify-end gap-2">
@@ -142,14 +146,14 @@ export function StatusActions({ request, userRole }: StatusActionsProps) {
                 onClick={() => { setShowDialog(false); setNote(""); }}
                 className="px-3 py-1.5 text-sm border rounded-md hover:bg-accent"
               >
-                Cancel
+                {t("status.dialog_cancel")}
               </button>
               <button
                 onClick={handleTransition}
                 disabled={loading || (needsNote && !note.trim())}
                 className="px-3 py-1.5 text-sm bg-primary text-primary-foreground rounded-md hover:opacity-90 disabled:opacity-50"
               >
-                {loading ? "Saving..." : "Confirm"}
+                {loading ? t("status.saving") : t("status.dialog_confirm")}
               </button>
             </div>
           </div>

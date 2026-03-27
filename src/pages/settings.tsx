@@ -2,6 +2,7 @@ import { useState, useEffect } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { apiGet, apiPatch } from "../api/client";
 import { cn } from "../lib/utils";
+import { t, setLanguage, currentLanguage, brand } from "../lib/i18n";
 import { Settings, Save, Check, Palette } from "lucide-react";
 
 interface AppSettings {
@@ -90,10 +91,10 @@ export function SettingsPage() {
   if (!settings) {
     return (
       <div className="p-6">
-        <h1 className="text-2xl font-bold">Settings</h1>
+        <h1 className="text-2xl font-bold">{t("settings.heading")}</h1>
         <div className="text-center py-12">
           <Settings className="h-10 w-10 text-muted-foreground/30 mx-auto mb-3" />
-          <p className="text-muted-foreground">No settings found. Settings will be created when the app is initialized.</p>
+          <p className="text-muted-foreground">{t("settings.no_settings")}</p>
         </div>
       </div>
     );
@@ -102,10 +103,10 @@ export function SettingsPage() {
   return (
     <div className="max-w-3xl mx-auto p-6 space-y-6">
       <div className="flex items-center justify-between">
-        <h1 className="text-2xl font-bold">Settings</h1>
+        <h1 className="text-2xl font-bold">{t("settings.heading")}</h1>
         {saved && (
           <span className="flex items-center gap-1 text-sm text-green-600 dark:text-green-400">
-            <Check className="h-4 w-4" /> Saved
+            <Check className="h-4 w-4" /> {t("settings.saved")}
           </span>
         )}
       </div>
@@ -113,10 +114,10 @@ export function SettingsPage() {
       <form onSubmit={handleSubmit} className="space-y-6">
         {/* General settings */}
         <div className="bg-card border rounded-lg p-5 space-y-4">
-          <h2 className="text-sm font-semibold">General</h2>
+          <h2 className="text-sm font-semibold">{t("settings.general")}</h2>
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             <div>
-              <label className="text-xs font-medium text-muted-foreground">App Name</label>
+              <label className="text-xs font-medium text-muted-foreground">{t("settings.app_name")}</label>
               <input
                 value={form.app_name || ""}
                 onChange={(e) => updateField("app_name", e.target.value)}
@@ -124,7 +125,7 @@ export function SettingsPage() {
               />
             </div>
             <div>
-              <label className="text-xs font-medium text-muted-foreground">Company Name</label>
+              <label className="text-xs font-medium text-muted-foreground">{t("settings.company_name")}</label>
               <input
                 value={form.company_name || ""}
                 onChange={(e) => updateField("company_name", e.target.value)}
@@ -132,7 +133,7 @@ export function SettingsPage() {
               />
             </div>
             <div>
-              <label className="text-xs font-medium text-muted-foreground">Support Email</label>
+              <label className="text-xs font-medium text-muted-foreground">{t("settings.support_email")}</label>
               <input
                 type="email"
                 value={form.support_email || ""}
@@ -141,7 +142,7 @@ export function SettingsPage() {
               />
             </div>
             <div>
-              <label className="text-xs font-medium text-muted-foreground">Support Phone</label>
+              <label className="text-xs font-medium text-muted-foreground">{t("settings.support_phone")}</label>
               <input
                 type="tel"
                 value={form.support_phone || ""}
@@ -150,22 +151,22 @@ export function SettingsPage() {
               />
             </div>
             <div>
-              <label className="text-xs font-medium text-muted-foreground">Time Zone</label>
+              <label className="text-xs font-medium text-muted-foreground">{t("settings.time_zone")}</label>
               <input
                 value={form.time_zone || ""}
                 onChange={(e) => updateField("time_zone", e.target.value)}
                 className="mt-1 w-full rounded-md border bg-background px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-ring"
-                placeholder="America/New_York"
+                placeholder={t("settings.time_zone_placeholder")}
               />
             </div>
             <div className="sm:col-span-2">
-              <label className="text-xs font-medium text-muted-foreground">Emergency Instructions</label>
+              <label className="text-xs font-medium text-muted-foreground">{t("settings.emergency_label")}</label>
               <textarea
                 value={form.emergency_instructions || ""}
                 onChange={(e) => updateField("emergency_instructions", e.target.value)}
                 rows={3}
                 className="mt-1 w-full rounded-md border bg-background px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-ring resize-none"
-                placeholder="Instructions shown to residents for emergencies..."
+                placeholder={t("settings.emergency_placeholder")}
               />
             </div>
           </div>
@@ -175,7 +176,7 @@ export function SettingsPage() {
         <div className="bg-card border rounded-lg p-5 space-y-4">
           <div className="flex items-center gap-2">
             <Palette className="h-4 w-4 text-muted-foreground" />
-            <h2 className="text-sm font-semibold">Theme</h2>
+            <h2 className="text-sm font-semibold">{t("settings.theme")}</h2>
           </div>
           <div className="flex flex-wrap gap-3">
             {themeOptions.map((theme) => (
@@ -197,34 +198,58 @@ export function SettingsPage() {
           </div>
         </div>
 
+        {/* Language picker — only when multiple languages configured */}
+        {brand.languages.length > 1 && (
+          <div className="bg-card border rounded-lg p-5 space-y-4">
+            <h2 className="text-sm font-semibold">{t("settings.language")}</h2>
+            <div className="flex flex-wrap gap-2">
+              {brand.languages.map((locale) => (
+                <button
+                  key={locale}
+                  type="button"
+                  onClick={() => setLanguage(locale)}
+                  className={cn(
+                    "px-3 py-2 rounded-lg border text-sm transition-colors",
+                    currentLanguage() === locale
+                      ? "border-primary bg-primary/5 ring-2 ring-ring"
+                      : "hover:bg-muted"
+                  )}
+                >
+                  {locale.toUpperCase()}
+                </button>
+              ))}
+            </div>
+          </div>
+        )}
+
         {/* Intake form toggles */}
         <div className="bg-card border rounded-lg p-5 space-y-4">
-          <h2 className="text-sm font-semibold">Intake Form Options</h2>
+          <h2 className="text-sm font-semibold">{t("settings.intake_heading")}</h2>
           <p className="text-xs text-muted-foreground">
-            Control which optional fields appear on the maintenance request form.
+            {t("settings.intake_description")}
           </p>
           <div className="space-y-3">
             <ToggleRow
-              label="Allow requester priority selection"
-              description="Let residents choose priority (urgent, high, normal, low) when submitting requests"
+              label={t("settings.toggle_priority")}
+              description={t("settings.toggle_priority_desc")}
               checked={form.allow_requester_priority_selection ?? false}
               onChange={(v) => updateField("allow_requester_priority_selection", v)}
             />
             <ToggleRow
-              label="Show pets field"
-              description="Ask if there are pets in the unit"
+              label={t("settings.toggle_pets")}
+              description={t("settings.toggle_pets_desc")}
               checked={form.show_pets_field ?? false}
               onChange={(v) => updateField("show_pets_field", v)}
             />
             <ToggleRow
-              label="Show preferred visit window"
-              description="Let residents specify preferred times for maintenance visits"
+              label={t("settings.toggle_visit")}
+              description={t("settings.toggle_visit_desc")}
               checked={form.show_preferred_visit_window ?? false}
               onChange={(v) => updateField("show_preferred_visit_window", v)}
             />
             <ToggleRow
-              label="Show entry preference"
-              description="Ask about entry preference (e.g., accompanied, unaccompanied)"
+              label={t("settings.toggle_entry")}
+              description={t("settings.toggle_entry_desc")}
               checked={form.show_entry_preference ?? false}
               onChange={(v) => updateField("show_entry_preference", v)}
             />
@@ -239,7 +264,7 @@ export function SettingsPage() {
             className="flex items-center gap-1.5 px-4 py-2 bg-primary text-primary-foreground rounded-md text-sm font-medium hover:opacity-90 disabled:opacity-50"
           >
             <Save className="h-4 w-4" />
-            {saveSettings.isPending ? "Saving..." : "Save Settings"}
+            {saveSettings.isPending ? t("settings.saving") : t("settings.save")}
           </button>
         </div>
       </form>

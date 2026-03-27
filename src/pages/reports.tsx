@@ -10,6 +10,7 @@ import {
   Download,
   FileSpreadsheet,
 } from "lucide-react";
+import { t } from "../lib/i18n";
 
 interface RequestMetrics {
   open_count: number;
@@ -106,34 +107,34 @@ export function ReportsPage() {
       const date = new Date().toISOString().slice(0, 10);
       downloadCsv(csv, `maintenance-requests-${date}.csv`);
     } catch (err) {
-      alert("Export failed: " + (err instanceof Error ? err.message : "Unknown error"));
+      alert(t("toast.export_failed", { error: err instanceof Error ? err.message : "Unknown error" }));
     }
   };
 
   const kpiCards = [
     {
-      label: "Open Requests",
+      label: t("reports.open_requests"),
       value: metrics?.open_count ?? "--",
       icon: Activity,
       color: "text-blue-600 dark:text-blue-400",
       bg: "bg-blue-100 dark:bg-blue-900/30",
     },
     {
-      label: "Overdue",
+      label: t("reports.overdue"),
       value: metrics?.overdue_count ?? "--",
       icon: AlertCircle,
       color: "text-red-600 dark:text-red-400",
       bg: "bg-red-100 dark:bg-red-900/30",
     },
     {
-      label: "Unassigned",
+      label: t("reports.unassigned"),
       value: metrics?.unassigned_count ?? "--",
       icon: UserX,
       color: "text-amber-600 dark:text-amber-400",
       bg: "bg-amber-100 dark:bg-amber-900/30",
     },
     {
-      label: "Avg First Response (30d)",
+      label: t("reports.avg_response"),
       value: formatHours(metrics?.avg_first_response_hours_30d ?? null),
       icon: Clock,
       color: "text-purple-600 dark:text-purple-400",
@@ -158,12 +159,12 @@ export function ReportsPage() {
   return (
     <div className="max-w-5xl mx-auto p-6 space-y-6">
       <div className="flex items-center justify-between">
-        <h1 className="text-2xl font-bold">Reports</h1>
+        <h1 className="text-2xl font-bold">{t("reports.heading")}</h1>
         <button
           onClick={handleExport}
           className="flex items-center gap-1.5 px-3 py-1.5 border rounded-md text-sm font-medium hover:bg-muted transition-colors"
         >
-          <Download className="h-4 w-4" /> Export CSV
+          <Download className="h-4 w-4" /> {t("reports.export_csv")}
         </button>
       </div>
 
@@ -191,16 +192,16 @@ export function ReportsPage() {
       <div className="bg-card border rounded-lg overflow-hidden">
         <div className="p-4 border-b flex items-center gap-2">
           <BarChart3 className="h-4 w-4 text-muted-foreground" />
-          <h2 className="text-sm font-semibold">Requests by Status</h2>
+          <h2 className="text-sm font-semibold">{t("reports.by_status")}</h2>
           <span className="text-xs text-muted-foreground ml-auto">
-            {requests?.length || 0} total
+            {t("reports.total", { count: requests?.length || 0 })}
           </span>
         </div>
 
         {sortedStatuses.length === 0 && !requestsLoading && (
           <div className="text-center py-12">
             <FileSpreadsheet className="h-10 w-10 text-muted-foreground/30 mx-auto mb-3" />
-            <p className="text-muted-foreground">No maintenance requests yet</p>
+            <p className="text-muted-foreground">{t("reports.no_requests")}</p>
           </div>
         )}
 
@@ -216,9 +217,9 @@ export function ReportsPage() {
           <div className="divide-y">
             {/* Table header */}
             <div className="grid grid-cols-12 gap-4 px-4 py-2 text-xs font-medium text-muted-foreground bg-muted/30">
-              <div className="col-span-4">Status</div>
-              <div className="col-span-2 text-right">Count</div>
-              <div className="col-span-6">Distribution</div>
+              <div className="col-span-4">{t("reports.status_col")}</div>
+              <div className="col-span-2 text-right">{t("reports.count_col")}</div>
+              <div className="col-span-6">{t("reports.distribution_col")}</div>
             </div>
 
             {/* Table rows */}

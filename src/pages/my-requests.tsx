@@ -3,6 +3,7 @@ import { useQuery } from "@tanstack/react-query";
 import { apiGet } from "../api/client";
 import { cn } from "../lib/utils";
 import { Clock, AlertTriangle, PlusCircle } from "lucide-react";
+import { t } from "../lib/i18n";
 
 interface RequestRow {
   id: string;
@@ -125,40 +126,40 @@ export function MyRequestsPage() {
   return (
     <div className="max-w-2xl mx-auto p-6 space-y-6">
       <div className="flex items-center justify-between">
-        <h1 className="text-xl font-bold">My Requests</h1>
+        <h1 className="text-xl font-bold">{t("my_requests.heading")}</h1>
         <button
           onClick={() => navigate("/app/report")}
           className="flex items-center gap-1.5 px-3 py-1.5 bg-primary text-primary-foreground rounded-md text-sm font-medium hover:opacity-90"
         >
-          <PlusCircle className="h-4 w-4" /> Report Issue
+          <PlusCircle className="h-4 w-4" /> {t("my_requests.report_issue")}
         </button>
       </div>
 
       {isEmpty && (
         <div className="text-center py-12">
           <AlertTriangle className="h-10 w-10 text-muted-foreground/30 mx-auto mb-3" />
-          <p className="text-muted-foreground">No requests yet</p>
-          <button onClick={() => navigate("/app/report")} className="text-sm text-primary mt-2 hover:underline">Report your first issue</button>
+          <p className="text-muted-foreground">{t("my_requests.no_requests")}</p>
+          <button onClick={() => navigate("/app/report")} className="text-sm text-primary mt-2 hover:underline">{t("my_requests.report_first")}</button>
         </div>
       )}
 
       {open.length > 0 && (
         <div>
-          <h2 className="text-sm font-semibold text-muted-foreground mb-2">Open</h2>
+          <h2 className="text-sm font-semibold text-muted-foreground mb-2">{t("my_requests.open")}</h2>
           <div className="space-y-2">{open.map(renderCard)}</div>
         </div>
       )}
 
       {resolved.length > 0 && (
         <div>
-          <h2 className="text-sm font-semibold text-muted-foreground mb-2">Awaiting Your Confirmation</h2>
+          <h2 className="text-sm font-semibold text-muted-foreground mb-2">{t("my_requests.awaiting_confirmation")}</h2>
           <div className="space-y-2">{resolved.map(renderCard)}</div>
         </div>
       )}
 
       {closed.length > 0 && (
         <div>
-          <h2 className="text-sm font-semibold text-muted-foreground mb-2">Closed</h2>
+          <h2 className="text-sm font-semibold text-muted-foreground mb-2">{t("my_requests.closed")}</h2>
           <div className="space-y-2">{closed.map(renderCard)}</div>
         </div>
       )}

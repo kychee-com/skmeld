@@ -11,7 +11,7 @@
 import { config } from "dotenv";
 config({ path: "../../.env" });
 
-import { readFileSync, readdirSync, existsSync } from "node:fs";
+import { readFileSync, writeFileSync, readdirSync, existsSync } from "node:fs";
 import { join } from "node:path";
 import { execSync } from "node:child_process";
 import { x402Client, wrapFetchWithPayment } from "@x402/fetch";
@@ -116,6 +116,48 @@ async function main() {
   const siteDir = join(__dirname, "site");
   if (!existsSync(siteDir)) {
     execSync("npm run build", { cwd: __dirname, stdio: "inherit" });
+  }
+
+  // 3b. Inject brand config into index.html
+  console.log("   Injecting brand config...");
+  const brandPath = join(__dirname, "src", "custom", "brand.json");
+  if (existsSync(brandPath)) {
+    const brand = JSON.parse(readFileSync(brandPath, "utf-8"));
+    const indexPath = join(siteDir, "index.html");
+    let html = readFileSync(indexPath, "utf-8");
+
+    // Inject title
+    html = html.replace(
+      /<!-- BRAND:TITLE -->\s*<title>[^<]*<\/title>/,
+      `<title>${brand.name}</title>`,
+    );
+
+    // Inject Google Fonts
+    if (brand.fonts?.source === "google") {
+      const families: string[] = [];
+      if (brand.fonts.display?.family) {
+        families.push(
+          `family=${brand.fonts.display.family.replace(/ /g, "+")}:wght@${(brand.fonts.display.weights || [600, 700]).join(";")}`,
+        );
+      }
+      if (brand.fonts.body?.family && brand.fonts.body.family !== brand.fonts.display?.family) {
+        families.push(
+          `family=${brand.fonts.body.family.replace(/ /g, "+")}:wght@${(brand.fonts.body.weights || [400, 500, 700]).join(";")}`,
+        );
+      }
+      if (families.length > 0) {
+        const fontsLink = `<link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin><link href="https://fonts.googleapis.com/css2?${families.join("&")}&display=swap" rel="stylesheet">`;
+        html = html.replace("<!-- BRAND:FONTS -->", fontsLink);
+      }
+    }
+    html = html.replace("<!-- BRAND:FONTS -->", "");
+
+    // Inject brand script
+    const brandScript = `<script>window.__SKMELD_BRAND__=${JSON.stringify(brand)};</script>`;
+    html = html.replace("<!-- BRAND:SCRIPT -->", brandScript);
+
+    writeFileSync(indexPath, html);
+    console.log(`   Brand: ${brand.name}`);
   }
 
   // 4. Read all SQL

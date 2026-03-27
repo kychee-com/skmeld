@@ -3,6 +3,7 @@ import { useQueryClient } from "@tanstack/react-query";
 import { invokeFunction } from "../api/client";
 import { cn } from "../lib/utils";
 import { Send, Lock } from "lucide-react";
+import { t } from "../lib/i18n";
 
 interface CommentComposerProps {
   requestId: string;
@@ -41,7 +42,7 @@ export function CommentComposer({ requestId, isStaff }: CommentComposerProps) {
         <textarea
           value={body}
           onChange={(e) => setBody(e.target.value)}
-          placeholder="Add a comment..."
+          placeholder={t("comment.placeholder")}
           rows={3}
           className="w-full px-3 py-2 border rounded-lg bg-background text-foreground resize-none focus:outline-none focus:ring-2 focus:ring-primary text-sm"
         />
@@ -59,7 +60,7 @@ export function CommentComposer({ requestId, isStaff }: CommentComposerProps) {
                   visibility === "public" ? "bg-primary/10 text-primary font-medium" : "text-muted-foreground hover:bg-accent",
                 )}
               >
-                Public
+                {t("comment.public")}
               </button>
               <button
                 type="button"
@@ -69,7 +70,7 @@ export function CommentComposer({ requestId, isStaff }: CommentComposerProps) {
                   visibility === "internal" ? "bg-amber-50 text-amber-700 dark:bg-amber-900/20 dark:text-amber-400 font-medium" : "text-muted-foreground hover:bg-accent",
                 )}
               >
-                <Lock className="h-3 w-3" /> Internal
+                <Lock className="h-3 w-3" /> {t("comment.internal")}
               </button>
             </div>
           )}
@@ -81,7 +82,7 @@ export function CommentComposer({ requestId, isStaff }: CommentComposerProps) {
           className="flex items-center gap-1.5 px-3 py-1.5 bg-primary text-primary-foreground rounded-md text-sm font-medium hover:opacity-90 disabled:opacity-50 transition-opacity"
         >
           <Send className="h-3.5 w-3.5" />
-          {sending ? "Sending..." : "Send"}
+          {sending ? t("comment.sending") : t("comment.send")}
         </button>
       </div>
     </form>
