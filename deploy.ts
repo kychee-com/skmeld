@@ -9,11 +9,16 @@
  */
 
 import { config } from "dotenv";
-config({ path: "../../.env" });
+config({ path: "../../.env" });   // monorepo layout (apps/skmeld/)
+config({ path: ".env" });         // standalone repo
 
 import { readFileSync, writeFileSync, readdirSync, existsSync } from "node:fs";
-import { join } from "node:path";
+import { join, dirname } from "node:path";
+import { fileURLToPath } from "node:url";
 import { execSync } from "node:child_process";
+
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = dirname(__filename);
 import { x402Client, wrapFetchWithPayment } from "@x402/fetch";
 import { ExactEvmScheme } from "@x402/evm/exact/client";
 import { toClientEvmSigner } from "@x402/evm";
@@ -202,6 +207,9 @@ async function main() {
   });
   const deployBody = await deployRes.json();
   console.log(`   Deploy status: ${deployRes.status}`);
+  if (deployRes.status >= 400) {
+    console.log(`   Deploy error: ${JSON.stringify(deployBody)}`);
+  }
   if (deployBody.bootstrap_result) {
     console.log(`   Bootstrap: ${JSON.stringify(deployBody.bootstrap_result)}`);
   }
@@ -209,26 +217,32 @@ async function main() {
     console.log(`   Bootstrap error: ${deployBody.bootstrap_error}`);
   }
 
-  // 8. Set cron schedules for scheduled functions
+  // 8. Deploy scheduled functions with cron schedules
+  // Bundle deploy doesn't support per-function schedules, so we re-deploy
+  // the two scheduled functions individually via the admin API.
   const scheduledFunctions = [
-    { name: "check-sla-overdue", schedule: "0 */4 * * *" },
-    { name: "daily-digest", schedule: "0 7 * * *" },
+    { name: "check-sla-overdue", file: "check-sla-overdue.ts", schedule: "0 */4 * * *" },
+    { name: "daily-digest", file: "daily-digest.ts", schedule: "0 7 * * *" },
   ];
   console.log("\n5) Setting function schedules...");
   for (const sf of scheduledFunctions) {
-    const schedHeaders = {
-      "Content-Type": "application/json",
-      Authorization: `Bearer ${project.service_key}`,
-    };
     const schedRes = await fetch(
-      `${BASE_URL}/projects/v1/admin/${project.project_id}/functions/${sf.name}`,
+      `${BASE_URL}/projects/v1/admin/${project.project_id}/functions`,
       {
-        method: "PATCH",
-        headers: schedHeaders,
-        body: JSON.stringify({ schedule: sf.schedule }),
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${project.service_key}`,
+        },
+        body: JSON.stringify({
+          name: sf.name,
+          code: readFunction(sf.file),
+          schedule: sf.schedule,
+        }),
       },
     );
-    console.log(`   ${sf.name} (${sf.schedule}): ${schedRes.status}`);
+    const schedBody = await schedRes.json().catch(() => ({}));
+    console.log(`   ${sf.name} (${sf.schedule}): ${schedRes.status} ${schedBody.status || schedBody.error || ""}`);
   }
 
   // 9. Publish (optional)
