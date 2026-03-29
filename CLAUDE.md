@@ -44,7 +44,7 @@ Schema is data-driven — no Postgres enums. Workflow concepts (statuses, priori
 
 #### Functions (functions/)
 
-Run402 Lambda functions (TypeScript). Import `db` and `getUser` from `@run402/functions`. Writes to `maintenance_requests` go through functions (not direct PostgREST) so business logic (SLA calculation, event logging, transition validation) is enforced server-side.
+Run402 Lambda functions (TypeScript). Import `db`, `getUser`, and `email` from `@run402/functions`. Writes to `maintenance_requests` go through functions (not direct PostgREST) so business logic (SLA calculation, event logging, transition validation) is enforced server-side.
 
 - `bootstrap.ts` — first-admin setup + optional demo data seeding
 - `submit-request.ts` — create request with SLA deadlines, occupancy validation
@@ -60,3 +60,19 @@ Single-script deploy to Run402 using x402 micropayments and SIWx auth. Bundles S
 ### Config (run402.yaml)
 
 Run402 app manifest. Defines bootstrap variables (admin_email, app_name, seed_demo_data) and marketplace publishing settings.
+
+## Run402 Integration Log
+
+**Last sync: 2026-03-29** — aligned with Run402 Lambda layer v7.
+
+Changes applied from Run402 upstream:
+- **`email.send()` helper** (layer v4+): Replaced manual `fetch()` to mailbox API in `create-invites.ts` with `import { email } from '@run402/functions'` + `email.send()`. Eliminates hardcoded MAILBOX_ID, API_BASE, SERVICE_KEY.
+- **Parameterized `db.sql()`** (layer v6+): Replaced string-interpolated SQL in `redeem-invite.ts` with `db.sql('...WHERE token = $1', [token])`. Fixes SQL injection risk.
+- **`getUser()` returns email** (layer v7): `getUser(req)` now returns `{ id, role, email }`. Available for use in functions that need the caller's email without a profile lookup.
+
+### Not-yet-adopted Run402 features (potential improvements)
+
+- **Scheduled functions** (`--schedule "<cron>"`): Could add an SLA-overdue checker or daily digest emailer.
+- **Google OAuth**: Zero-config social login — could add a "Sign in with Google" button on login page.
+- **Content-Range CORS**: Frontend can now read `Content-Range` from PostgREST for pagination counts.
+- **Raw HTML email mode**: `email.send({ to, subject, html })` — useful for richer notification emails beyond templates.

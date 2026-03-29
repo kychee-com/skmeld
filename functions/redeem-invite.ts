@@ -12,7 +12,7 @@ export default async (req: Request) => {
   }
 
   // Look up invite using service_role (bypasses RLS)
-  const inviteResult = await db.sql(`SELECT * FROM invites WHERE token = '${token.replace(/'/g, "''")}'`);
+  const inviteResult = await db.sql('SELECT * FROM invites WHERE token = $1', [token]);
   const invite = inviteResult.rows?.[0];
 
   if (!invite) {

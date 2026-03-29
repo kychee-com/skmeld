@@ -1,4 +1,4 @@
-import { db, getUser } from '@run402/functions';
+import { db, email, getUser } from '@run402/functions';
 
 export default async (req: Request) => {
   const user = getUser(req);
@@ -19,10 +19,6 @@ export default async (req: Request) => {
   // Read app name for email template
   const [settings] = await db.from("app_settings").select("app_name").eq("id", 1);
   const appName = settings?.app_name || "SkMeld";
-
-  const MAILBOX_ID = "mbx_1774371928529_5wb607";
-  const API_BASE = process.env.RUN402_API_BASE || "https://api.run402.com";
-  const SERVICE_KEY = process.env.RUN402_SERVICE_KEY || "";
 
   const results = [];
   const baseUrl = req.headers.get("origin") || req.headers.get("referer")?.replace(/\/[^/]*$/, "") || "";
@@ -49,33 +45,19 @@ export default async (req: Request) => {
 
     if (!inv.email) {
       email_error = "No email address provided";
-    } else if (!MAILBOX_ID) {
-      email_error = "Email not configured";
     } else {
       try {
-        const emailRes = await fetch(`${API_BASE}/mailboxes/v1/${MAILBOX_ID}/messages`, {
-          method: "POST",
-          headers: {
-            "Authorization": `Bearer ${SERVICE_KEY}`,
-            "Content-Type": "application/json",
+        await email.send({
+          to: inv.email,
+          template: "project_invite",
+          variables: {
+            inviter_name: profile.full_name || "Admin",
+            project_name: appName,
+            invite_url: claimUrl,
           },
-          body: JSON.stringify({
-            template: "project_invite",
-            to: inv.email,
-            variables: {
-              inviter_name: profile.full_name || "Admin",
-              project_name: appName,
-              invite_url: claimUrl,
-            },
-          }),
+          from_name: appName,
         });
-
-        if (emailRes.ok) {
-          email_sent = true;
-        } else {
-          const errBody = await emailRes.json().catch(() => ({}));
-          email_error = errBody.message || errBody.error || `Email API error ${emailRes.status}`;
-        }
+        email_sent = true;
       } catch (err) {
         email_error = `Email delivery failed: ${err instanceof Error ? err.message : String(err)}`;
       }
