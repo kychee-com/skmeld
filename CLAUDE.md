@@ -52,6 +52,8 @@ Run402 Lambda functions (TypeScript). Import `db`, `getUser`, and `email` from `
 - `transition-request.ts` — status changes with role-based transition validation
 - `add-comment.ts` — add comment with optional attachments
 - `create-invites.ts` / `redeem-invite.ts` — invite flow for onboarding users
+- `check-sla-overdue.ts` — scheduled (every 4h): detects overdue requests, logs events, sends batched email notifications
+- `daily-digest.ts` — scheduled (daily 7:00 UTC): sends daily summary email to staff/admin with open request counts and details
 
 ### Deploy (deploy.ts)
 
@@ -72,7 +74,7 @@ Changes applied from Run402 upstream:
 
 ### Not-yet-adopted Run402 features (potential improvements)
 
-- **Scheduled functions** (`--schedule "<cron>"`): Could add an SLA-overdue checker or daily digest emailer.
+- ~~**Scheduled functions**~~: Adopted — `check-sla-overdue` (every 4h) and `daily-digest` (daily 7:00 UTC) deployed with cron schedules via admin API.
 - **Google OAuth**: Zero-config social login — could add a "Sign in with Google" button on login page.
 - **Content-Range CORS**: Frontend can now read `Content-Range` from PostgREST for pagination counts.
 - **Raw HTML email mode**: `email.send({ to, subject, html })` — useful for richer notification emails beyond templates.

@@ -170,6 +170,7 @@ async function main() {
     "bootstrap.ts", "submit-request.ts", "update-request.ts",
     "transition-request.ts", "add-comment.ts",
     "create-invites.ts", "redeem-invite.ts",
+    "check-sla-overdue.ts", "daily-digest.ts",
   ];
   const functions = functionFiles.map(f => ({
     name: f.replace(".ts", ""),
@@ -208,7 +209,29 @@ async function main() {
     console.log(`   Bootstrap error: ${deployBody.bootstrap_error}`);
   }
 
-  // 8. Publish (optional)
+  // 8. Set cron schedules for scheduled functions
+  const scheduledFunctions = [
+    { name: "check-sla-overdue", schedule: "0 */4 * * *" },
+    { name: "daily-digest", schedule: "0 7 * * *" },
+  ];
+  console.log("\n5) Setting function schedules...");
+  for (const sf of scheduledFunctions) {
+    const schedHeaders = {
+      "Content-Type": "application/json",
+      Authorization: `Bearer ${project.service_key}`,
+    };
+    const schedRes = await fetch(
+      `${BASE_URL}/projects/v1/admin/${project.project_id}/functions/${sf.name}`,
+      {
+        method: "PATCH",
+        headers: schedHeaders,
+        body: JSON.stringify({ schedule: sf.schedule }),
+      },
+    );
+    console.log(`   ${sf.name} (${sf.schedule}): ${schedRes.status}`);
+  }
+
+  // 9. Publish (optional)
   if (PUBLISH) {
     console.log("\n5) Publishing to marketplace...");
     const pubRes = await fetch(`${BASE_URL}/projects/v1/admin/${project.project_id}/publish`, {

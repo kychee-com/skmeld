@@ -54,6 +54,7 @@ export default async (req: Request) => {
     if (newPriority) {
       updates.resolution_due_at = new Date(new Date(existing.created_at).getTime() + newPriority.target_resolution_hours * 3600000).toISOString();
     }
+    updates.is_overdue_notified = false;
   }
 
   const [updated] = await db.from("maintenance_requests").update(updates).eq("id", request_id);

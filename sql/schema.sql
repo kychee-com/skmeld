@@ -240,13 +240,15 @@ CREATE TABLE maintenance_requests (
   cancellation_reason TEXT,
   created_at TIMESTAMPTZ NOT NULL DEFAULT now(),
   updated_at TIMESTAMPTZ NOT NULL DEFAULT now(),
-  metadata JSONB NOT NULL DEFAULT '{}'
+  metadata JSONB NOT NULL DEFAULT '{}',
+  is_overdue_notified BOOLEAN NOT NULL DEFAULT false
 );
 
 CREATE INDEX idx_requests_property ON maintenance_requests(property_id);
 CREATE INDEX idx_requests_status ON maintenance_requests(status_key);
 CREATE INDEX idx_requests_requester ON maintenance_requests(requester_profile_user_id);
 CREATE INDEX idx_requests_assignee ON maintenance_requests(assignee_user_id);
+CREATE INDEX idx_requests_sla_deadlines ON maintenance_requests(first_response_due_at, resolution_due_at);
 
 -- ============================================================
 -- G. Comments, attachments, events
