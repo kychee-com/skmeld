@@ -1,4 +1,4 @@
-import { db, getUser } from '@run402/functions';
+import { db, email, getUser } from '@run402/functions';
 
 export default async (req: Request) => {
   const user = getUser(req);
@@ -112,6 +112,43 @@ export default async (req: Request) => {
       body: internal_note,
     });
   }
+
+  // Send email notification
+  try {
+    const [settings] = await db.from("app_settings").select("app_name").eq("id", 1);
+    const appName = settings?.app_name || "SkMeld";
+    const statusLabel = toStatus?.label || to_status_key;
+
+    // Determine recipient: if actor is the requester, notify assigned staff; otherwise notify requester
+    let recipientEmail: string | null = null;
+    if (user.id === request.requester_profile_user_id) {
+      if (request.assignee_user_id) {
+        const [assignee] = await db.from("profiles").select("email").eq("user_id", request.assignee_user_id);
+        recipientEmail = assignee?.email || null;
+      }
+    } else {
+      const [requester] = await db.from("profiles").select("email").eq("user_id", request.requester_profile_user_id);
+      recipientEmail = requester?.email || null;
+    }
+
+    if (recipientEmail) {
+      let details = "";
+      if (resolution_summary) details += `<p><strong>Resolution:</strong> ${resolution_summary}</p>`;
+      if (public_note) details += `<p><strong>Note:</strong> ${public_note}</p>`;
+
+      await email.send({
+        to: recipientEmail,
+        subject: `[${appName}] Request #${request.request_number} — ${statusLabel}`,
+        html: `
+          <h2>Request #${request.request_number}: ${request.title}</h2>
+          <p>Status changed to <strong>${statusLabel}</strong>.</p>
+          ${details}
+          <p style="color:#6b7280;font-size:12px">Notification from ${appName}.</p>
+        `,
+        from_name: appName,
+      });
+    }
+  } catch { /* fire-and-forget */ }
 
   return new Response(JSON.stringify(updated), { headers: { "Content-Type": "application/json" } });
 };
