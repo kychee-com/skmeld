@@ -1,5 +1,6 @@
-const API_BASE = import.meta.env.VITE_API_BASE || "https://api.run402.com";
-const ANON_KEY = import.meta.env.VITE_ANON_KEY || "";
+const _cfg = (window as unknown as { __SKMELD_CONFIG__?: { apiBase?: string; anonKey?: string } }).__SKMELD_CONFIG__;
+const API_BASE = import.meta.env.VITE_API_BASE || _cfg?.apiBase || "https://api.run402.com";
+const ANON_KEY = import.meta.env.VITE_ANON_KEY || _cfg?.anonKey || "";
 
 // --- Session-expired callback (registered by auth.tsx to avoid circular imports) ---
 

@@ -182,6 +182,20 @@ async function main() {
     console.log(`   Brand: ${brand.name}`);
   }
 
+  // 3c. Inject runtime config (anon key, API base) into index.html
+  {
+    const indexPath = join(siteDir, "index.html");
+    let html = readFileSync(indexPath, "utf-8");
+    const configScript = `<script>window.__SKMELD_CONFIG__=${JSON.stringify({
+      apiBase: BASE_URL,
+      anonKey: project.anon_key,
+    })};</script>`;
+    // Insert before the closing </head> tag
+    html = html.replace("</head>", `${configScript}\n</head>`);
+    writeFileSync(indexPath, html);
+    console.log(`   Config injected (anon key: ${project.anon_key?.slice(0, 20)}...)`);
+  }
+
   // 4. Read all SQL
   const migrations = readSQL("schema.sql", "seed-base.sql");
   const rlsSQL = readSQL("rls.sql");
