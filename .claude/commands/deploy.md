@@ -84,10 +84,13 @@ Compare the deploy and test results against expected behavior. Look for:
 - **New friction**: Anything that required a workaround
 
 For each issue found:
-1. Check if it's already filed on the run402 repo: `gh issue list --repo MajorTal/run402 --state open`
-2. If not already filed, create a GitHub issue:
+1. Determine the correct repo:
+   - **MajorTal/run402** — platform issues (API, gateway, deploy, functions runtime, auth, email, tiers, infrastructure)
+   - **kychee-com/run402** — CLI, MCP server, and Claude Code skill issues
+2. Check if it's already filed: `gh issue list --repo <repo> --state open`
+3. If not already filed, create a GitHub issue:
    ```bash
-   gh issue create --repo MajorTal/run402 --title "..." --body "..."
+   gh issue create --repo <repo> --title "..." --body "..."
    ```
    Include: problem description, reproduction steps, expected vs actual, suggestion.
 
