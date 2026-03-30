@@ -104,41 +104,31 @@ async function main() {
   });
   console.log(`   Tier: ${tierRes.status}`);
 
-  // 2. Provision or reuse project
-  console.log("\n2) Provisioning project...");
-  const headers = await siwxHeaders("/projects/v1");
-
-  // Check for existing project first
-  const listRes = await fetch(`${BASE_URL}/projects/v1`, {
-    method: "GET",
-    headers: { ...headers },
-  });
-  const existingProjects = await listRes.json().catch(() => []);
-  const existing = Array.isArray(existingProjects)
-    ? existingProjects.find((p: { name: string }) => p.name === "skmeld")
-    : null;
-
+  // 2. Provision project (once) or reuse from app.json
+  console.log("\n2) Project...");
+  const appJsonPath = join(__dirname, "app.json");
   let project: { project_id: string; anon_key: string; service_key: string };
-  if (existing) {
-    project = existing;
-    console.log(`   Reusing project: ${project.project_id}`);
+
+  if (existsSync(appJsonPath)) {
+    project = JSON.parse(readFileSync(appJsonPath, "utf-8"));
+    console.log(`   Reusing: ${project.project_id} (from app.json)`);
   } else {
+    const headers = await siwxHeaders("/projects/v1");
     const projRes = await fetch(`${BASE_URL}/projects/v1`, {
       method: "POST",
       headers: { "Content-Type": "application/json", ...headers },
       body: JSON.stringify({ name: "skmeld" }),
     });
     project = await projRes.json();
-    console.log(`   Created project: ${project.project_id}`);
+    writeFileSync(appJsonPath, JSON.stringify(project, null, 2));
+    console.log(`   Created: ${project.project_id} (saved to app.json)`);
   }
   console.log(`   Anon key: ${project.anon_key?.slice(0, 20)}...`);
 
-  // 3. Build frontend
+  // 3. Build frontend (always rebuild to avoid stale bundles)
   console.log("\n3) Building frontend...");
   const siteDir = join(__dirname, "site");
-  if (!existsSync(siteDir)) {
-    execSync("npm run build", { cwd: __dirname, stdio: "inherit" });
-  }
+  execSync("npm run build", { cwd: __dirname, stdio: "inherit" });
 
   // 3b. Inject brand config into index.html
   console.log("   Injecting brand config...");
