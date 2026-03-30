@@ -191,20 +191,24 @@ async function main() {
   const rlsSQL = readSQL("rls.sql");
   const viewsSQL = readSQL("views.sql");
 
-  // 5. Read functions
-  // Scheduled functions are excluded from the bundle and deployed
-  // individually in step 8 with their cron schedules attached.
-  // This keeps the bundle within the 8-function prototype tier limit.
+  // 5. Read functions (all in the bundle, including scheduled)
   const functionFiles = [
     "bootstrap.ts", "submit-request.ts", "update-request.ts",
     "transition-request.ts", "add-comment.ts",
     "create-invites.ts", "redeem-invite.ts",
-    "on-signup.ts",
+    "on-signup.ts", "scheduled-tasks.ts",
   ];
-  const functions = functionFiles.map(f => ({
-    name: f.replace(".ts", ""),
-    code: readFunction(f),
-  }));
+  const schedules: Record<string, string> = {
+    "scheduled-tasks": "0 */4 * * *",
+  };
+  const functions = functionFiles.map(f => {
+    const name = f.replace(".ts", "");
+    return {
+      name,
+      code: readFunction(f),
+      ...(schedules[name] ? { schedule: schedules[name] } : {}),
+    };
+  });
 
   // 6. Read site files
   const siteFiles = readSiteFiles(siteDir);
@@ -241,36 +245,7 @@ async function main() {
     console.log(`   Bootstrap error: ${deployBody.bootstrap_error}`);
   }
 
-  // 8. Deploy scheduled function (SLA check + daily digest combined)
-  // Prototype tier has 8 function limit (bundle uses all 8) and 1 scheduled function slot.
-  // This step deploys the scheduled function separately — it will fail on prototype
-  // if the limit is hit, but succeeds on hobby+ tiers.
-  console.log("\n5) Deploying scheduled function...");
-  const schedRes = await fetch(
-    `${BASE_URL}/projects/v1/admin/${project.project_id}/functions`,
-    {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-        Authorization: `Bearer ${project.service_key}`,
-      },
-      body: JSON.stringify({
-        name: "scheduled-tasks",
-        code: readFunction("scheduled-tasks.ts"),
-        schedule: "0 */4 * * *",
-      }),
-    },
-  );
-  const schedBody = await schedRes.json().catch(() => ({}));
-  if (schedRes.status === 201) {
-    console.log(`   scheduled-tasks (0 */4 * * *): deployed`);
-  } else if (schedRes.status === 403) {
-    console.log(`   scheduled-tasks: skipped (${schedBody.error || "tier limit"}) — trigger manually or upgrade tier`);
-  } else {
-    console.log(`   scheduled-tasks: ${schedRes.status} ${schedBody.error || ""}`);
-  }
-
-  // 9. Publish (optional)
+  // 8. Publish (optional)
   if (PUBLISH) {
     console.log("\n5) Publishing to marketplace...");
     const pubRes = await fetch(`${BASE_URL}/projects/v1/admin/${project.project_id}/publish`, {
