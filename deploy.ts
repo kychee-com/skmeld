@@ -30,7 +30,7 @@ import { baseSepolia } from "viem/chains";
 
 const BASE_URL = process.env.RUN402_API_BASE || "https://api.run402.com";
 const BUYER_KEY = process.env.BUYER_PRIVATE_KEY as `0x${string}`;
-const SUBDOMAIN = "skmeld";
+const SUBDOMAIN = process.env.SKMELD_SUBDOMAIN || "skmeld-dev";
 const PUBLISH = process.argv.includes("--publish");
 
 if (!BUYER_KEY) {
@@ -104,16 +104,33 @@ async function main() {
   });
   console.log(`   Tier: ${tierRes.status}`);
 
-  // 2. Provision project
+  // 2. Provision or reuse project
   console.log("\n2) Provisioning project...");
   const headers = await siwxHeaders("/projects/v1");
-  const projRes = await fetch(`${BASE_URL}/projects/v1`, {
-    method: "POST",
-    headers: { "Content-Type": "application/json", ...headers },
-    body: JSON.stringify({ name: "skmeld" }),
+
+  // Check for existing project first
+  const listRes = await fetch(`${BASE_URL}/projects/v1`, {
+    method: "GET",
+    headers: { ...headers },
   });
-  const project = await projRes.json();
-  console.log(`   Project: ${project.project_id}`);
+  const existingProjects = await listRes.json().catch(() => []);
+  const existing = Array.isArray(existingProjects)
+    ? existingProjects.find((p: { name: string }) => p.name === "skmeld")
+    : null;
+
+  let project: { project_id: string; anon_key: string; service_key: string };
+  if (existing) {
+    project = existing;
+    console.log(`   Reusing project: ${project.project_id}`);
+  } else {
+    const projRes = await fetch(`${BASE_URL}/projects/v1`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json", ...headers },
+      body: JSON.stringify({ name: "skmeld" }),
+    });
+    project = await projRes.json();
+    console.log(`   Created project: ${project.project_id}`);
+  }
   console.log(`   Anon key: ${project.anon_key?.slice(0, 20)}...`);
 
   // 3. Build frontend
@@ -171,11 +188,13 @@ async function main() {
   const viewsSQL = readSQL("views.sql");
 
   // 5. Read functions
+  // Scheduled functions are excluded from the bundle and deployed
+  // individually in step 8 with their cron schedules attached.
+  // This keeps the bundle within the 8-function prototype tier limit.
   const functionFiles = [
     "bootstrap.ts", "submit-request.ts", "update-request.ts",
     "transition-request.ts", "add-comment.ts",
     "create-invites.ts", "redeem-invite.ts",
-    "check-sla-overdue.ts", "daily-digest.ts",
     "on-signup.ts",
   ];
   const functions = functionFiles.map(f => ({
@@ -218,32 +237,33 @@ async function main() {
     console.log(`   Bootstrap error: ${deployBody.bootstrap_error}`);
   }
 
-  // 8. Deploy scheduled functions with cron schedules
-  // Bundle deploy doesn't support per-function schedules, so we re-deploy
-  // the two scheduled functions individually via the admin API.
-  const scheduledFunctions = [
-    { name: "check-sla-overdue", file: "check-sla-overdue.ts", schedule: "0 */4 * * *" },
-    { name: "daily-digest", file: "daily-digest.ts", schedule: "0 7 * * *" },
-  ];
-  console.log("\n5) Setting function schedules...");
-  for (const sf of scheduledFunctions) {
-    const schedRes = await fetch(
-      `${BASE_URL}/projects/v1/admin/${project.project_id}/functions`,
-      {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          Authorization: `Bearer ${project.service_key}`,
-        },
-        body: JSON.stringify({
-          name: sf.name,
-          code: readFunction(sf.file),
-          schedule: sf.schedule,
-        }),
+  // 8. Deploy scheduled function (SLA check + daily digest combined)
+  // Prototype tier has 8 function limit (bundle uses all 8) and 1 scheduled function slot.
+  // This step deploys the scheduled function separately — it will fail on prototype
+  // if the limit is hit, but succeeds on hobby+ tiers.
+  console.log("\n5) Deploying scheduled function...");
+  const schedRes = await fetch(
+    `${BASE_URL}/projects/v1/admin/${project.project_id}/functions`,
+    {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        Authorization: `Bearer ${project.service_key}`,
       },
-    );
-    const schedBody = await schedRes.json().catch(() => ({}));
-    console.log(`   ${sf.name} (${sf.schedule}): ${schedRes.status} ${schedBody.status || schedBody.error || ""}`);
+      body: JSON.stringify({
+        name: "scheduled-tasks",
+        code: readFunction("scheduled-tasks.ts"),
+        schedule: "0 */4 * * *",
+      }),
+    },
+  );
+  const schedBody = await schedRes.json().catch(() => ({}));
+  if (schedRes.status === 201) {
+    console.log(`   scheduled-tasks (0 */4 * * *): deployed`);
+  } else if (schedRes.status === 403) {
+    console.log(`   scheduled-tasks: skipped (${schedBody.error || "tier limit"}) — trigger manually or upgrade tier`);
+  } else {
+    console.log(`   scheduled-tasks: ${schedRes.status} ${schedBody.error || ""}`);
   }
 
   // 9. Publish (optional)
