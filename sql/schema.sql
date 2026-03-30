@@ -5,7 +5,7 @@
 -- A. App settings (single-row config)
 -- ============================================================
 
-CREATE TABLE app_settings (
+CREATE TABLE IF NOT EXISTS app_settings (
   id INTEGER PRIMARY KEY DEFAULT 1 CHECK (id = 1),
   app_name TEXT NOT NULL DEFAULT 'SkMeld',
   company_name TEXT,
@@ -38,13 +38,13 @@ CREATE TABLE app_settings (
 -- B. People / auth
 -- ============================================================
 
-CREATE TABLE role_definitions (
+CREATE TABLE IF NOT EXISTS role_definitions (
   key TEXT PRIMARY KEY,
   label TEXT NOT NULL,
   sort_order INTEGER NOT NULL DEFAULT 0
 );
 
-CREATE TABLE profiles (
+CREATE TABLE IF NOT EXISTS profiles (
   user_id TEXT PRIMARY KEY,
   email TEXT,
   full_name TEXT,
@@ -56,7 +56,7 @@ CREATE TABLE profiles (
   metadata JSONB NOT NULL DEFAULT '{}'
 );
 
-CREATE TABLE invites (
+CREATE TABLE IF NOT EXISTS invites (
   id TEXT PRIMARY KEY DEFAULT 'inv_' || substr(gen_random_uuid()::text, 1, 12),
   email TEXT,
   full_name TEXT,
@@ -73,7 +73,7 @@ CREATE TABLE invites (
 -- C. Property structure
 -- ============================================================
 
-CREATE TABLE properties (
+CREATE TABLE IF NOT EXISTS properties (
   id TEXT PRIMARY KEY DEFAULT 'prop_' || substr(gen_random_uuid()::text, 1, 12),
   name TEXT NOT NULL,
   code TEXT,
@@ -90,13 +90,13 @@ CREATE TABLE properties (
   metadata JSONB NOT NULL DEFAULT '{}'
 );
 
-CREATE TABLE space_types (
+CREATE TABLE IF NOT EXISTS space_types (
   key TEXT PRIMARY KEY,
   label TEXT NOT NULL,
   sort_order INTEGER NOT NULL DEFAULT 0
 );
 
-CREATE TABLE spaces (
+CREATE TABLE IF NOT EXISTS spaces (
   id TEXT PRIMARY KEY DEFAULT 'spc_' || substr(gen_random_uuid()::text, 1, 12),
   property_id TEXT NOT NULL REFERENCES properties(id) ON DELETE CASCADE,
   name TEXT NOT NULL,
@@ -110,9 +110,9 @@ CREATE TABLE spaces (
   metadata JSONB NOT NULL DEFAULT '{}'
 );
 
-CREATE INDEX idx_spaces_property ON spaces(property_id);
+CREATE INDEX IF NOT EXISTS idx_spaces_property ON spaces(property_id);
 
-CREATE TABLE space_occupancies (
+CREATE TABLE IF NOT EXISTS space_occupancies (
   id TEXT PRIMARY KEY DEFAULT 'occ_' || substr(gen_random_uuid()::text, 1, 12),
   profile_user_id TEXT NOT NULL REFERENCES profiles(user_id) ON DELETE CASCADE,
   space_id TEXT NOT NULL REFERENCES spaces(id) ON DELETE CASCADE,
@@ -123,14 +123,14 @@ CREATE TABLE space_occupancies (
   metadata JSONB NOT NULL DEFAULT '{}'
 );
 
-CREATE INDEX idx_occupancies_user ON space_occupancies(profile_user_id);
-CREATE INDEX idx_occupancies_space ON space_occupancies(space_id);
+CREATE INDEX IF NOT EXISTS idx_occupancies_user ON space_occupancies(profile_user_id);
+CREATE INDEX IF NOT EXISTS idx_occupancies_space ON space_occupancies(space_id);
 
 -- ============================================================
 -- D. Workflow config (data-driven, no enums)
 -- ============================================================
 
-CREATE TABLE request_statuses (
+CREATE TABLE IF NOT EXISTS request_statuses (
   key TEXT PRIMARY KEY,
   label TEXT NOT NULL,
   color_token TEXT NOT NULL DEFAULT 'gray',
@@ -143,7 +143,7 @@ CREATE TABLE request_statuses (
   updated_at TIMESTAMPTZ NOT NULL DEFAULT now()
 );
 
-CREATE TABLE priority_levels (
+CREATE TABLE IF NOT EXISTS priority_levels (
   key TEXT PRIMARY KEY,
   label TEXT NOT NULL,
   color_token TEXT NOT NULL DEFAULT 'gray',
@@ -153,7 +153,7 @@ CREATE TABLE priority_levels (
   is_default BOOLEAN NOT NULL DEFAULT false
 );
 
-CREATE TABLE request_categories (
+CREATE TABLE IF NOT EXISTS request_categories (
   key TEXT PRIMARY KEY,
   label TEXT NOT NULL,
   icon_name TEXT,
@@ -162,19 +162,19 @@ CREATE TABLE request_categories (
   is_active BOOLEAN NOT NULL DEFAULT true
 );
 
-CREATE TABLE entry_preferences (
+CREATE TABLE IF NOT EXISTS entry_preferences (
   key TEXT PRIMARY KEY,
   label TEXT NOT NULL,
   sort_order INTEGER NOT NULL DEFAULT 0
 );
 
-CREATE TABLE request_sources (
+CREATE TABLE IF NOT EXISTS request_sources (
   key TEXT PRIMARY KEY,
   label TEXT NOT NULL,
   sort_order INTEGER NOT NULL DEFAULT 0
 );
 
-CREATE TABLE status_transitions (
+CREATE TABLE IF NOT EXISTS status_transitions (
   id SERIAL PRIMARY KEY,
   from_status_key TEXT NOT NULL REFERENCES request_statuses(key),
   to_status_key TEXT NOT NULL REFERENCES request_statuses(key),
@@ -187,7 +187,7 @@ CREATE TABLE status_transitions (
 -- E. Vendors
 -- ============================================================
 
-CREATE TABLE vendors (
+CREATE TABLE IF NOT EXISTS vendors (
   id TEXT PRIMARY KEY DEFAULT 'vnd_' || substr(gen_random_uuid()::text, 1, 12),
   name TEXT NOT NULL,
   primary_contact_name TEXT,
@@ -205,7 +205,7 @@ CREATE TABLE vendors (
 -- F. Maintenance requests (core domain)
 -- ============================================================
 
-CREATE TABLE maintenance_requests (
+CREATE TABLE IF NOT EXISTS maintenance_requests (
   id TEXT PRIMARY KEY DEFAULT 'req_' || substr(gen_random_uuid()::text, 1, 12),
   request_number SERIAL,
   title TEXT NOT NULL,
@@ -244,17 +244,23 @@ CREATE TABLE maintenance_requests (
   is_overdue_notified BOOLEAN NOT NULL DEFAULT false
 );
 
-CREATE INDEX idx_requests_property ON maintenance_requests(property_id);
-CREATE INDEX idx_requests_status ON maintenance_requests(status_key);
-CREATE INDEX idx_requests_requester ON maintenance_requests(requester_profile_user_id);
-CREATE INDEX idx_requests_assignee ON maintenance_requests(assignee_user_id);
-CREATE INDEX idx_requests_sla_deadlines ON maintenance_requests(first_response_due_at, resolution_due_at);
+CREATE INDEX IF NOT EXISTS idx_requests_property ON maintenance_requests(property_id);
+CREATE INDEX IF NOT EXISTS idx_requests_status ON maintenance_requests(status_key);
+CREATE INDEX IF NOT EXISTS idx_requests_requester ON maintenance_requests(requester_profile_user_id);
+CREATE INDEX IF NOT EXISTS idx_requests_assignee ON maintenance_requests(assignee_user_id);
+CREATE INDEX IF NOT EXISTS idx_requests_sla_deadlines ON maintenance_requests(first_response_due_at, resolution_due_at);
+
+-- Column added after initial schema — safe to re-run
+DO $$ BEGIN
+  ALTER TABLE maintenance_requests ADD COLUMN is_overdue_notified BOOLEAN NOT NULL DEFAULT false;
+EXCEPTION WHEN duplicate_column THEN NULL;
+END $$;
 
 -- ============================================================
 -- G. Comments, attachments, events
 -- ============================================================
 
-CREATE TABLE request_comments (
+CREATE TABLE IF NOT EXISTS request_comments (
   id TEXT PRIMARY KEY DEFAULT 'cmt_' || substr(gen_random_uuid()::text, 1, 12),
   request_id TEXT NOT NULL REFERENCES maintenance_requests(id) ON DELETE CASCADE,
   author_user_id TEXT,
@@ -264,9 +270,9 @@ CREATE TABLE request_comments (
   metadata JSONB NOT NULL DEFAULT '{}'
 );
 
-CREATE INDEX idx_comments_request ON request_comments(request_id);
+CREATE INDEX IF NOT EXISTS idx_comments_request ON request_comments(request_id);
 
-CREATE TABLE attachments (
+CREATE TABLE IF NOT EXISTS attachments (
   id TEXT PRIMARY KEY DEFAULT 'att_' || substr(gen_random_uuid()::text, 1, 12),
   request_id TEXT NOT NULL REFERENCES maintenance_requests(id) ON DELETE CASCADE,
   comment_id TEXT REFERENCES request_comments(id) ON DELETE SET NULL,
@@ -283,9 +289,9 @@ CREATE TABLE attachments (
   metadata JSONB NOT NULL DEFAULT '{}'
 );
 
-CREATE INDEX idx_attachments_request ON attachments(request_id);
+CREATE INDEX IF NOT EXISTS idx_attachments_request ON attachments(request_id);
 
-CREATE TABLE request_events (
+CREATE TABLE IF NOT EXISTS request_events (
   id TEXT PRIMARY KEY DEFAULT 'evt_' || substr(gen_random_uuid()::text, 1, 12),
   request_id TEXT NOT NULL REFERENCES maintenance_requests(id) ON DELETE CASCADE,
   actor_user_id TEXT,
@@ -296,13 +302,13 @@ CREATE TABLE request_events (
   created_at TIMESTAMPTZ NOT NULL DEFAULT now()
 );
 
-CREATE INDEX idx_events_request ON request_events(request_id);
+CREATE INDEX IF NOT EXISTS idx_events_request ON request_events(request_id);
 
 -- ============================================================
 -- H. Notification log
 -- ============================================================
 
-CREATE TABLE notification_log (
+CREATE TABLE IF NOT EXISTS notification_log (
   id TEXT PRIMARY KEY DEFAULT 'ntf_' || substr(gen_random_uuid()::text, 1, 12),
   request_id TEXT REFERENCES maintenance_requests(id) ON DELETE SET NULL,
   recipient_email TEXT,
