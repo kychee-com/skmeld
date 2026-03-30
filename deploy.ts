@@ -176,6 +176,7 @@ async function main() {
     "transition-request.ts", "add-comment.ts",
     "create-invites.ts", "redeem-invite.ts",
     "check-sla-overdue.ts", "daily-digest.ts",
+    "on-signup.ts",
   ];
   const functions = functionFiles.map(f => ({
     name: f.replace(".ts", ""),

@@ -46,3 +46,10 @@ The deploy script SHALL deploy scheduled functions as part of the bundle (for co
 #### Scenario: Schedule configuration for daily digest
 - **WHEN** setting the schedule for `daily-digest`
 - **THEN** the deploy script SHALL set the cron expression to `0 7 * * *` (daily at 7:00 AM UTC)
+
+### Requirement: Deploy includes on-signup function in bundle
+The deploy script SHALL include `on-signup.ts` in the bundle deploy functions array. No schedule is needed — the Run402 gateway auto-discovers and invokes functions named `on-signup`.
+
+#### Scenario: Bundle deploy includes on-signup
+- **WHEN** the deploy script builds the functions array for the bundle payload
+- **THEN** the array SHALL include `{ name: "on-signup", code: <contents of on-signup.ts> }`

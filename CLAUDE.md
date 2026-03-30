@@ -54,6 +54,7 @@ Run402 Lambda functions (TypeScript). Import `db`, `getUser`, and `email` from `
 - `create-invites.ts` / `redeem-invite.ts` — invite flow for onboarding users
 - `check-sla-overdue.ts` — scheduled (every 4h): detects overdue requests, logs events, sends batched email notifications
 - `daily-digest.ts` — scheduled (daily 7:00 UTC): sends daily summary email to staff/admin with open request counts and details
+- `on-signup.ts` — Run402 lifecycle hook: auto-creates a `resident` profile on every new user signup
 
 ### Deploy (deploy.ts)
 
