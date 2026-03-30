@@ -28,8 +28,25 @@ interface AuthContextValue {
   loading: boolean;
   login: (email: string, password: string) => Promise<void>;
   signup: (email: string, password: string) => Promise<{ id: string }>;
+  loginWithGoogle: () => Promise<void>;
+  handleOAuthCallback: () => Promise<boolean>;
   logout: () => void;
   refreshProfile: () => Promise<void>;
+}
+
+// --- PKCE Helpers ---
+
+function generatePKCEVerifier(): string {
+  const arr = new Uint8Array(32);
+  crypto.getRandomValues(arr);
+  return btoa(String.fromCharCode(...arr))
+    .replace(/\+/g, "-").replace(/\//g, "_").replace(/=+$/, "");
+}
+
+async function generatePKCEChallenge(verifier: string): Promise<string> {
+  const digest = await crypto.subtle.digest("SHA-256", new TextEncoder().encode(verifier));
+  return btoa(String.fromCharCode(...new Uint8Array(digest)))
+    .replace(/\+/g, "-").replace(/\//g, "_").replace(/=+$/, "");
 }
 
 const AuthContext = createContext<AuthContextValue | null>(null);
@@ -224,6 +241,62 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     return res.json();
   };
 
+  const loginWithGoogle = async () => {
+    const verifier = generatePKCEVerifier();
+    const challenge = await generatePKCEChallenge(verifier);
+    sessionStorage.setItem("pkce_verifier", verifier);
+
+    const res = await fetch(`${API_BASE}/auth/v1/oauth/google/start`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json", apikey: ANON_KEY },
+      body: JSON.stringify({
+        redirect_url: window.location.origin + "/login",
+        mode: "redirect",
+        code_challenge: challenge,
+        code_challenge_method: "S256",
+      }),
+    });
+    if (!res.ok) {
+      const body = await res.json().catch(() => ({}));
+      throw new Error(body.error || "Failed to start Google sign-in");
+    }
+    const { authorization_url } = await res.json();
+    window.location.href = authorization_url;
+  };
+
+  const handleOAuthCallback = async (): Promise<boolean> => {
+    const params = new URLSearchParams(window.location.hash.substring(1));
+    const code = params.get("code");
+    if (!code) return false;
+
+    // Clean the URL hash immediately
+    window.history.replaceState(null, "", window.location.pathname + window.location.search);
+
+    const verifier = sessionStorage.getItem("pkce_verifier");
+    sessionStorage.removeItem("pkce_verifier");
+
+    const res = await fetch(`${API_BASE}/auth/v1/token?grant_type=authorization_code`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json", apikey: ANON_KEY },
+      body: JSON.stringify({ code, code_verifier: verifier }),
+    });
+
+    if (!res.ok) {
+      const body = await res.json().catch(() => ({}));
+      const errMsg = body.error || "Google sign-in failed";
+      if (errMsg.includes("account_exists")) {
+        throw new Error("An account with this email already exists. Please sign in with your email and password.");
+      }
+      throw new Error(errMsg);
+    }
+
+    const session: Session = await res.json();
+    storeSession(session);
+    setUser(session.user);
+    scheduleRefresh(session.expires_in);
+    return true;
+  };
+
   const logout = () => {
     clearRefreshTimer();
     localStorage.removeItem(SESSION_KEY);
@@ -237,7 +310,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   };
 
   return (
-    <AuthContext.Provider value={{ user, profile, loading, login, signup, logout, refreshProfile }}>
+    <AuthContext.Provider value={{ user, profile, loading, login, signup, loginWithGoogle, handleOAuthCallback, logout, refreshProfile }}>
       {children}
     </AuthContext.Provider>
   );
